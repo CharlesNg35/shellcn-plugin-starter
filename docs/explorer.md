@@ -149,6 +149,11 @@ In a handler: `rc.Param("namespace")`. For a multi-select scope, read it with
 `rc.ParamList("param", plugin.ScopeSeparator)`. `Control` picks the widget
 (`ScopeSelect` default, `ScopeMultiSelect`, `ScopeSearch`, `ScopeToggle`).
 
+Prefer a **narrow `DefaultValue`** so the first paint is bounded - redis opens on
+database `0`, not all 16. Only default to an "all" scope (via `AllLabel`) when the
+list behind it is paginated server-side and genuinely cheap to span; otherwise the
+opening view fetches everything at once.
+
 ## Sortable columns - and sort on the server
 
 Mark a column `Sortable: true` and set the table's `DefaultSort`. The UI sends

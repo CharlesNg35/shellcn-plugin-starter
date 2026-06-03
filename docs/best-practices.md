@@ -9,12 +9,12 @@ idiomatic, reviewable, and consistent with the rest of the catalog.
 The plugin is a normal Go program; split it the way the built-ins do rather than
 one big file:
 
-| File          | Holds                                                                |
-| ------------- | -------------------------------------------------------------------- |
-| `main.go`     | `func main() { sdk.Serve(...) }` - nothing else.                     |
-| `manifest.go` | The plugin type, `Manifest()`, `Routes()`, `Connect()`.              |
-| `session.go`  | The `Session` struct, its methods, and the route handlers.           |
-| `config.go`   | The `Schema` and option parsing/validation (once it grows).          |
+| File          | Holds                                                       |
+| ------------- | ----------------------------------------------------------- |
+| `main.go`     | `func main() { sdk.Serve(...) }` - nothing else.            |
+| `manifest.go` | The plugin type, `Manifest()`, `Routes()`, `Connect()`.     |
+| `session.go`  | The `Session` struct, its methods, and the route handlers.  |
+| `config.go`   | The `Schema` and option parsing/validation (once it grows). |
 
 Built-ins range from a single ~60-line file (`plugins/s3`) to a directory of
 domain files (`plugins/kubernetes`). Start small; split by concern as it grows.
@@ -149,6 +149,42 @@ if !ok || port == 0 {
 JSON numbers arrive as `float64` - `cfg.Int` already handles that; don't assert
 `.(int)` yourself.
 
+## Validate input in two layers
+
+Untrusted input is checked twice, and you wire both:
+
+- **The route's `Input` schema** is validated by the core wrapper **before** your
+  handler runs, and the form uses it for instant feedback. Attach `Validators` to
+  fields so bad input never reaches you:
+
+  ```go
+  {Key: "port", Label: "Port", Type: plugin.FieldNumber, Required: true,
+   Validators: []plugin.Validator{
+       {Type: plugin.ValidatorMin, Value: 1}, {Type: plugin.ValidatorMax, Value: 65535},
+   }},
+  ```
+
+  The validators are `ValidatorMin`, `ValidatorMax`, `ValidatorRegex`, and
+  `ValidatorOneOf`.
+
+- **`rc.Bind(&dst)`** in the handler decodes the body into a typed struct and runs
+  its `validate:"..."` struct tags, returning `ErrInvalidInput` on a bad payload:
+
+  ```go
+  var req struct {
+      Name        string `json:"name" validate:"required"`
+      IfNotExists bool   `json:"if_not_exists"`
+  }
+  if err := rc.Bind(&req); err != nil {
+      return nil, err
+  }
+  ```
+
+Schema validators and struct tags catch shape errors; they do **not** make a value
+safe to interpolate. Re-check anything security-sensitive yourself - validate an
+identifier against a whitelist before it touches a query (see
+[explorer.md](explorer.md#build-sql-safely)).
+
 ## Errors: wrap a sentinel, never return it bare
 
 The gateway maps `plugin.Err*` to HTTP status codes. Always add context with
@@ -188,8 +224,15 @@ term := req.Search() // the grid's free-text box ("q")
 return plugin.Page[Row]{Items: rows, NextCursor: next, Total: &total}, nil
 ```
 
-Encode an opaque cursor (the built-ins base64 an offset). Don't dump unbounded
-result sets - the limit is clamped for a reason.
+Encode an opaque cursor (the built-ins base64 an offset). `rc.Page()` already
+clamps the limit to `MaxPageLimit`, so don't dump unbounded result sets.
+
+When the data is **already in memory** (a fixed list you fetched whole), don't
+hand-roll filter/sort/paging - the SDK has the primitives the built-ins use:
+`plugin.FilterRows(rows, req.Search())` for the free-text box and
+`plugin.SortRows(rows, req.Sort)` for the column sort, then slice by the cursor.
+A handful of generic helpers cover most list handlers; reach for them before
+writing your own loop.
 
 ## Many object types? Parameterize routes by kind
 
