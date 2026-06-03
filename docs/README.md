@@ -69,6 +69,11 @@ You write protocol logic; the gateway owns everything around it:
 4. [Streaming](streaming.md) - terminals, logs, channels, recording.
 5. [Explorer & database plugins](explorer.md) - trees, scope filters, sorting,
    selectable rows, editable grids, query editors.
-6. [Agents](agents.md) - reaching targets in a private network.
-7. [Build & install](build-and-install.md) - compile, ship, load, version.
-8. [Best practices](best-practices.md) - conventions distilled from the built-ins.
+6. [File browser plugins](file-browser.md) - the file-manager UI: listing, range
+   downloads, uploads, bulk ops.
+7. [Metrics & dashboards](metrics.md) - stat cards, gauges, time-series charts,
+   and overview grids.
+8. [Web proxy](web-proxy.md) - embed a target's own web UI through the gateway.
+9. [Agents](agents.md) - reaching targets in a private network.
+10. [Build & install](build-and-install.md) - compile, ship, load, version.
+11. [Best practices](best-practices.md) - conventions distilled from the built-ins.
