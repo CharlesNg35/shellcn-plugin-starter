@@ -185,6 +185,46 @@ if len(req.Sort) > 0 {
 `Column.Type` also drives the cell renderer: `ColumnBytes`, `ColumnDateTime`,
 `ColumnNumber`, `ColumnPercent`, `ColumnBadge` (+`Severities`), `ColumnJSON`.
 
+## Status badges and clear states
+
+A status column should read at a glance. Map the status values to colors **once**
+and reuse that map on both the list column and the detail header, so a "running"
+guest looks identical in the table and on its detail page:
+
+```go
+// Define the value -> color map once; keys are matched lower-cased.
+var stateSeverities = map[string]plugin.Severity{
+    "running": plugin.SeveritySuccess,
+    "paused":  plugin.SeverityWarn,
+    "exited":  plugin.SeveritySecondary,
+    "dead":    plugin.SeverityDanger,
+}
+
+// On the list column...
+{Key: "state", Label: "State", Type: plugin.ColumnBadge, Sortable: true, Severities: stateSeverities},
+// ...and the detail header, the same map:
+Header: plugin.HeaderSpec{Title: "${resource.name}", StatusField: "state", Severities: stateSeverities},
+```
+
+The colors are `SeveritySuccess`, `SeverityWarn`, `SeverityDanger`, `SeverityInfo`,
+and `SeveritySecondary`; an unmapped value renders neutral. The built-ins keep
+this map in a shared helper (docker's `StateSeverities()`) so list and detail can
+never drift apart.
+
+Give every list and result panel a **meaningful empty state** with `EmptyText`
+rather than a blank grid - say what's absent or what to do next:
+
+```go
+plugin.TableConfig{Columns: cols, EmptyText: "No containers in this environment."}
+plugin.QueryEditorConfig{Language: "sql", EmptyText: "Run a query to see results."}
+```
+
+Errors are handled on the handler side: wrap the right
+[sentinel](best-practices.md#errors-wrap-a-sentinel-never-return-it-bare) and the
+UI surfaces an actionable message (404 vs 403 vs 503) instead of a generic
+failure. Success and failure feedback is rendered centrally, so you never build
+per-plugin toasts.
+
 ## Selectable rows & bulk actions
 
 A `ResourceType` groups its actions by **where they render**:
@@ -291,6 +331,36 @@ Run the query over a **WS route** (results stream back as they arrive) and have
 the handler report each statement through `rc.Audit(...)` so long-running console
 work is recorded. Honor `rc.Ctx` cancellation so the Cancel button actually stops
 the statement.
+
+## Build SQL safely
+
+User input reaches your queries two ways, and they are handled differently:
+
+- **Values** (a cell's new content, a filter term) always go through
+  **placeholders** (`$1`, `?`) as bound arguments - never concatenated into the
+  SQL string.
+- **Identifiers** (table, column, schema names) **cannot** be placeholders, so
+  validate each against a strict whitelist and quote it.
+
+```go
+// Identifier: validate (whitelist) then quote. The built-ins use
+// ^[A-Za-z_][A-Za-z0-9_]{0,62}$ and reject anything else.
+col, err := safeIdentifier(req.Sort[0].Field)
+if err != nil {
+    return nil, err
+}
+order := quoteIdent(col)
+
+// Values: bind, don't concatenate.
+rows, err := db.QueryContext(ctx,
+    `SELECT * FROM `+quoteIdent(table)+` WHERE status = $1 ORDER BY `+order, status)
+```
+
+The built-in SQL plugins centralize this in a shared `sqldb` dialect
+(`SafeIdentifier`, `QuoteIdent`, and parameterized `Insert`/`Update`/`Delete`).
+The same split applies to any query language with identifiers (CQL, N1QL). Treat
+**every** name as untrusted - including a column the client got from your own
+`ColumnsSource`, since it can send anything back.
 
 ## Config / YAML editing
 
