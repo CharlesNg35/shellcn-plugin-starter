@@ -204,8 +204,8 @@ func shell(rc *plugin.RequestContext, client plugin.ClientStream) error {
     }
     defer ch.Close()
     errc := make(chan error, 2)
-    go func() { _, e := io.Copy(client, ch); errc <- e }() // upstream → browser
-    go func() { _, e := io.Copy(ch, client); errc <- e }() // browser → upstream
+    go func() { _, e := io.Copy(client, ch); errc <- e }()      // upstream → browser
+    go func() { errc <- plugin.CopyTerminalInput(ch, client) }() // browser → upstream (handles resize)
     select {
     case <-client.Context().Done():
         return nil
@@ -217,7 +217,10 @@ func shell(rc *plugin.RequestContext, client plugin.ClientStream) error {
 ```
 
 `defer ch.Close()`, always `select` on `client.Context().Done()`, and treat
-`io.EOF` as a clean close. See [streaming.md](streaming.md) for resize/recording.
+`io.EOF` as a clean close. `plugin.CopyTerminalInput` handles the terminal's
+in-band resize frames for you - just implement `plugin.Resizer` (`Resize(cols,
+rows int) error`) on your channel. See [streaming.md](streaming.md) for the
+details and recording.
 
 ## Test the manifest and the handlers
 

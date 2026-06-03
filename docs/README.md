@@ -67,6 +67,8 @@ You write protocol logic; the gateway owns everything around it:
 2. [Routes](routes.md) - handlers, input, validation, errors.
 3. [Sessions](sessions.md) - state and reaching the target.
 4. [Streaming](streaming.md) - terminals, logs, channels, recording.
-5. [Agents](agents.md) - reaching targets in a private network.
-6. [Build & install](build-and-install.md) - compile, ship, load, version.
-7. [Best practices](best-practices.md) - conventions distilled from the built-ins.
+5. [Explorer & database plugins](explorer.md) - trees, scope filters, sorting,
+   selectable rows, editable grids, query editors.
+6. [Agents](agents.md) - reaching targets in a private network.
+7. [Build & install](build-and-install.md) - compile, ship, load, version.
+8. [Best practices](best-practices.md) - conventions distilled from the built-ins.

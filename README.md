@@ -61,6 +61,7 @@ It now appears in the connection catalog like any built-in protocol.
 - [Routes](docs/routes.md) - endpoints, input, validation, errors.
 - [Sessions](docs/sessions.md) - per-connection state and reaching the target.
 - [Streaming](docs/streaming.md) - terminals, logs, channels, recording.
+- [Explorer & database plugins](docs/explorer.md) - trees, scope filters, sorting, editable grids, query editors.
 - [Agents](docs/agents.md) - tunnelling into a private network.
 - [Build & install](docs/build-and-install.md) - compile, ship, load, version.
 - [Best practices](docs/best-practices.md) - conventions from the built-in plugins.

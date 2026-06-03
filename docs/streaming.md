@@ -37,8 +37,8 @@ func shellStream(rc *plugin.RequestContext, client plugin.ClientStream) error {
     defer ch.Close()
 
     errc := make(chan error, 2)
-    go func() { _, e := io.Copy(client, ch); errc <- e }() // upstream → browser
-    go func() { _, e := io.Copy(ch, client); errc <- e }() // browser → upstream
+    go func() { _, e := io.Copy(client, ch); errc <- e }()      // upstream → browser
+    go func() { errc <- plugin.CopyTerminalInput(ch, client) }() // browser → upstream
     select {
     case <-client.Context().Done(): // browser disconnected
         return nil
@@ -58,12 +58,24 @@ Rules the built-ins follow:
   session down.
 - Treat `io.EOF` as a clean exit, not an error.
 
-### Resize and exit-status
+### Resize (the `CopyTerminalInput` helper)
 
-These are just app-level frames on the same stream - no extra wire surface. The
-SSH plugin reserves a control frame (a `0x00`-prefixed JSON `{type,cols,rows}`)
-for resize and reads initial `cols`/`rows` from the query params. Define whatever
-framing your protocol needs and handle it in the copy loop.
+The terminal panel sends resize events in-band: a frame starting with a `0x00`
+byte carries JSON (`{"type":"resize","cols":N,"rows":N}`); everything else is
+keystrokes. Rather than parse that yourself, use the SDK helper for the
+browser→upstream half:
+
+```go
+go func() { errc <- plugin.CopyTerminalInput(ch, client) }()
+```
+
+`plugin.CopyTerminalInput` writes keystrokes to the channel and, on a resize
+frame, calls `ch.Resize(cols, rows)` **if the channel implements
+`plugin.Resizer`** (`Resize(cols, rows int) error`). So all you do is implement
+`Resize` on your channel (see above); the helper does the framing. Read the
+initial `cols`/`rows` from `rc.Params()`. If you ever need the raw values,
+`plugin.ParseResizeControl(frame)` decodes one. Exit status is just bytes your
+handler writes before the stream closes - no extra wire surface.
 
 ## `plugin.ClientStream`
 
@@ -114,10 +126,12 @@ func (c *shellChannel) Resize(cols, rows int) error { return c.pty.Setsize(cols,
 func (c *desktopChannel) ServerInit() []byte { return c.serverInit }
 ```
 
-If your channel implements `Resize(cols, rows int) error`, the gateway forwards
-browser resize events to it. If it implements `ServerInit() []byte`, the gateway
-hands that blob to the client when the screen opens. Channels without these
-methods are unaffected - a plain logs channel stays plain.
+If your channel implements `Resize(cols, rows int) error` (the `plugin.Resizer`
+interface), browser resize events reach it - whether they arrive through
+`plugin.CopyTerminalInput` in your stream handler or are forwarded by the gateway
+for a tracked channel. If it implements `ServerInit() []byte`, the gateway hands
+that blob to the client when the screen opens. Channels without these methods are
+unaffected - a plain logs channel stays plain.
 
 ## Declaring streams in the manifest
 
