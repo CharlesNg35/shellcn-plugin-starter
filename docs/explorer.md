@@ -57,6 +57,37 @@ So a node is one of: a **leaf**, a thing that **opens a resource list**
 a branch that **loads more children** (`ChildrenSource`). Return `Leaf: true` when
 there's nothing under it, so the UI doesn't show an expander.
 
+## Stop the tree at the collection
+
+The sidebar tree is for **navigation**, not for data. Expand it down to a
+**collection** (Pods, Deployments, Volumes) and stop there: make that node a
+**leaf** that opens the collection's **list** in the main panel, where it can
+paginate, sort, filter, and stream. Never expand a collection's members into the
+tree as individual nodes - a namespace with 5,000 pods would build a 5,000-node
+tree the user has to scroll, with no paging and no search.
+
+Kubernetes does exactly this: `Workloads` expands to `Pods`, `Deployments`, ...
+and each of those is a leaf that opens the list view. The individual pods live in
+the list, never in the tree.
+
+```go
+// A collection node: a leaf that opens the kind's LIST (not its members).
+plugin.TreeNode{
+    Key: "kind:pod", Label: "Pods", Icon: icon("box"),
+    Leaf:         true,
+    ResourceKind: "pod",                            // click -> open the pod list
+    ListParams:   map[string]string{"node": name}, // optional scoping
+}
+```
+
+Reach for `ChildrenSource` (inline expansion) only for **small, bounded** fan-out
+that is itself navigation - categories, sub-groups, a handful of cluster nodes -
+not for a data collection. The test: if a node's children could number in the
+hundreds or thousands, it's a list, so use `ResourceKind`; if it's a short, fixed
+menu, `ChildrenSource` is fine. Clicking a row in the opened list is what reaches
+a single item's [detail view](#resource-detail-views) - that is where one pod's
+tabs (logs, YAML, events) live, not the tree.
+
 ## Resource detail views
 
 A `ResourceType` declares what opens when a row (or `Ref` node) is clicked: a
@@ -178,6 +209,37 @@ The rule the built-ins follow: **bulk-destructive only in the row bar; everythin
 single-item goes in the detail view.** It keeps the selection bar uncluttered and
 avoids two delete buttons. For a plain browse table (selection but no row bar),
 set `Selectable: true` on the `TableConfig`.
+
+## Guard and group actions
+
+An action is just a button wired to a route, but a few fields make it safe and
+usable. Proxmox's guest lifecycle is the reference:
+
+```go
+plugin.Action{
+    ID: "act.qemu.stop", Label: "Stop", Icon: icon("square"),
+    RouteID:     "proxmox.qemu.stop",
+    Confirm:     true,                                   // ask before firing
+    ConfirmText: "Force stop this guest? Unsaved state is lost.",
+    EnabledWhen: &plugin.Condition{AllOf: []plugin.Rule{ // grey out unless it applies
+        {Field: "status", Op: plugin.OpIn, Value: []string{"running"}},
+    }},
+    Group:     "Power",                                       // cluster into a dropdown
+    OnSuccess: &plugin.ActionSuccess{SelectTab: "snapshots"}, // focus a tab after
+}
+```
+
+- **`Confirm` + `ConfirmText`** on anything destructive or disruptive (stop,
+  destroy, restore). Write the consequence, not "Are you sure?".
+- **`EnabledWhen`** disables the button unless the active row matches - Start only
+  when `stopped`, Stop only when `running`. The condition reads row fields
+  (`AllOf`/`AnyOf` of `{Field, Op, Value}`; ops `OpEq`, `OpNeq`, `OpIn`, `OpNin`,
+  `OpEmpty`, `OpNotEmpty`). This is UX only; the gateway still enforces the route's
+  risk server-side.
+- **`Group`** collects related actions (Power, Snapshots) into one labeled
+  dropdown instead of a wall of buttons.
+- **`OnSuccess.SelectTab`** moves the user to the relevant tab after success (take
+  a snapshot, land on the Snapshots tab).
 
 ## Editable grids (the database "data" tab)
 
