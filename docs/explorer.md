@@ -16,6 +16,73 @@ Resources: []plugin.ResourceType{ /* a managed object type: list + detail */ },
 Scope:     []plugin.ScopeFilter{ /* global selectors injected into reads */ },
 ```
 
+## Lazy resource trees
+
+The sidebar is built from `TreeGroup` roots that **expand on demand** - you never
+ship the whole tree, you serve each level from a route as the user opens it. This
+is how proxmox does cluster -> node -> guest and kubernetes does category ->
+namespace -> object without loading everything up front.
+
+```go
+// Roots (manifest). Source provides the first level; ResourceKind says what a
+// node opens into.
+Tree: []plugin.TreeGroup{
+    {Key: "nodes", Label: "Nodes", Icon: icon("server"),
+     Source: plugin.DataSource{RouteID: "proxmox.tree.nodes"}, ResourceKind: "node"},
+    {Key: "storage", Label: "Storage", Icon: icon("database"),
+     Source: plugin.DataSource{RouteID: "proxmox.tree.storage"}, ResourceKind: "storage"},
+},
+```
+
+A tree route returns `plugin.Page[plugin.TreeNode]`. Each `TreeNode` chooses what
+happens on click/expand:
+
+```go
+plugin.TreeNode{
+    Key: "node:" + name, Label: name, Icon: icon("server"),
+    ResourceKind: "guest",                              // expanding opens a *list* of this kind...
+    ListParams:   map[string]string{"node": name},      //   with these params merged in
+    Leaf:         true,
+}
+// or, to open a single resource's detail:
+plugin.TreeNode{Key: "...", Label: name,
+    Ref: &plugin.ResourceRef{Kind: "storage", Namespace: node, Name: name, UID: name}, Leaf: true}
+// or, to expand deeper lazily:
+plugin.TreeNode{Key: "...", Label: name,
+    ChildrenSource: &plugin.DataSource{RouteID: "x.tree.children", Params: map[string]string{"parent": name}}}
+```
+
+So a node is one of: a **leaf**, a thing that **opens a resource list**
+(`ResourceKind` + `ListParams`), a thing that **opens a detail view** (`Ref`), or
+a branch that **loads more children** (`ChildrenSource`). Return `Leaf: true` when
+there's nothing under it, so the UI doesn't show an expander.
+
+## Resource detail views
+
+A `ResourceType` declares what opens when a row (or `Ref` node) is clicked: a
+header with a status badge, and tabbed panels.
+
+```go
+Detail: plugin.DetailView{
+    Header: plugin.HeaderSpec{
+        Title:       "${resource.name}",
+        StatusField: "status",          // a row field rendered as a badge
+        Severities:  statusSeverities,  // value -> color (running=success, stopped=danger)
+    },
+    Tabs: []plugin.Panel{
+        {Key: "overview", Label: "Overview", Type: plugin.PanelMetrics,
+         Source: &plugin.DataSource{RouteID: "proxmox.qemu.metrics", Method: plugin.MethodWS, Params: guestParams()}, Config: cpuMemMetrics()},
+        {Key: "console", Label: "Console", Type: plugin.PanelRemoteDesktop,
+         Source: &plugin.DataSource{RouteID: "proxmox.qemu.console", Method: plugin.MethodWS, Params: guestParams()},
+         Config: plugin.RemoteDesktopConfig{Resize: true, Clipboard: true}},
+    },
+}
+```
+
+Detail tabs are where the per-item screens live: a live metrics graph, a console,
+an editable data grid, a YAML editor, logs. `${resource.scope/namespace/name/uid}`
+carry the clicked object's identity into each tab's route params.
+
 ## Scope filters (the global picker)
 
 A `ScopeFilter` is a selector shown above everything (a database, namespace, or
@@ -162,6 +229,24 @@ Run the query over a **WS route** (results stream back as they arrive) and have
 the handler report each statement through `rc.Audit(...)` so long-running console
 work is recorded. Honor `rc.Ctx` cancellation so the Cancel button actually stops
 the statement.
+
+## Config / YAML editing
+
+For editing a document (a Kubernetes object's YAML, a config blob), use a
+`PanelCodeEditor` with a `CodeEditorConfig` that loads current content from its
+`Source` route and applies edits to a save route:
+
+```go
+plugin.CodeEditorConfig{
+    Language:    "yaml",
+    SaveRouteID: "kubernetes.resource.apply", // POST the edited document here
+    SaveMethod:  plugin.MethodPost,
+}
+```
+
+The panel's `Source` loads the current document; Save sends the buffer to
+`SaveRouteID`. Validate and apply server-side in the handler, returning a clear
+`plugin.ErrInvalidInput` on a bad document so the editor can surface it.
 
 ## Putting it together
 

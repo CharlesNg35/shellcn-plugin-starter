@@ -191,6 +191,32 @@ return plugin.Page[Row]{Items: rows, NextCursor: next, Total: &total}, nil
 Encode an opaque cursor (the built-ins base64 an offset). Don't dump unbounded
 result sets - the limit is clamped for a reason.
 
+## Many object types? Parameterize routes by kind
+
+If your protocol has dozens of object types (kubernetes has pods, deployments,
+services, ...), don't write near-identical routes for each. Declare **one** set of
+routes keyed by a `{kind}` path param, and resolve it against a catalog in the
+handler:
+
+```go
+{ID: "k8s.resource.list",   Method: plugin.MethodGet,    Path: "/resources/{kind}",        Handle: ListResource},
+{ID: "k8s.resource.delete", Method: plugin.MethodDelete, Path: "/resources/{kind}/delete", Handle: DeleteResource},
+{ID: "k8s.resource.watch",  Method: plugin.MethodWS,     Path: "/resources/{kind}/watch",  Stream: WatchResource},
+
+func ListResource(rc *plugin.RequestContext) (any, error) {
+    k, err := resolveKind(s, rc.Param("kind")) // look up in a catalog (+ runtime CRDs)
+    if err != nil {
+        return nil, err
+    }
+    // ...one generic implementation drives every kind...
+}
+```
+
+Kubernetes serves its whole catalog (plus runtime CRDs) from ~6 routes this way.
+Keep the catalog (kind -> columns, actions, detail tabs) as data, so adding a kind
+is a data change, not new routes. Permissions still apply per-route, so group
+kinds that share a risk level.
+
 ## Streaming: bridge, watch the client, tear down
 
 For a terminal/exec, open an upstream channel and pump both ways, exiting on
