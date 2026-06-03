@@ -222,6 +222,42 @@ which you read with `cfg.CredentialSecretFor(...)` (see
 | `LayoutDashboard`   | A grid of panels (from `Tabs`) shown at once.          |
 | `LayoutSingle`      | One full-bleed panel (a terminal/desktop/file screen). |
 
+### Choosing a layout by protocol shape
+
+Pick the layout from how your protocol is navigated, not from its category. The
+built-ins map cleanly onto four shapes:
+
+| Your protocol is...                                                        | Layout              | Typical panels                                                  | Built-ins                                      |
+| -------------------------------------------------------------------------- | ------------------- | --------------------------------------------------------------- | ---------------------------------------------- |
+| **One screen** (a single terminal, file tree, or desktop)                  | `LayoutSingle`      | one `PanelTerminal` / `PanelFileBrowser` / `PanelRemoteDesktop` | sftp, ftp, smb, vnc, rdp, telnet               |
+| **A few flat views** (terminal + files, or browse + admin)                 | `LayoutTabs`        | a handful of `Tabs`                                             | ssh, s3, minio, redis                          |
+| **A big hierarchy** (databases→tables, namespaces→pods, topics→partitions) | `LayoutSidebarTree` | `Tree` + `Resources` with `DetailView`s                         | postgresql, mongodb, docker, kubernetes, kafka |
+| **An at-a-glance board** (several charts/tables at once)                   | `LayoutDashboard`   | `Tabs` as dashboard cells                                       | (dashboard-style monitors)                     |
+
+Rules of thumb:
+
+- A pure **terminal**, **desktop**, or **single file tree** is `LayoutSingle` -
+  no tab bar, just the screen.
+- A **shell with extras** (terminal + a file browser + saved snippets) is
+  `LayoutTabs` - the ssh plugin is the canonical example.
+- Anything you **explore** - a database with schemas and tables, an orchestrator
+  with many resource kinds, a broker with topics - is `LayoutSidebarTree`: a lazy
+  `Tree` on the left, a `ResourceType` per object kind, and a `DetailView` opened
+  on click. This is where most non-trivial plugins land.
+- A small **key/value or status** protocol (e.g. redis) is fine as `LayoutTabs`;
+  reach for `LayoutSidebarTree` only once the object count makes a tree worth it.
+
+```go
+// One screen (a file manager):
+Layout: plugin.LayoutSingle,
+Tabs:   []plugin.Panel{{Key: "files", Type: plugin.PanelFileBrowser, Source: &plugin.DataSource{RouteID: "fs.list"}}},
+
+// Explorer (databases -> tables): a tree plus resource types with detail views.
+Layout:    plugin.LayoutSidebarTree,
+Tree:      []plugin.TreeGroup{{Key: "databases", Label: "Databases", Source: plugin.DataSource{RouteID: "db.tree"}}},
+Resources: []plugin.ResourceType{ /* "table": list columns + DetailView with a data + query panel */ },
+```
+
 ## Panels (`Tabs`)
 
 A `Panel` is one screen. It has a `Key`, `Label`, `Icon`, a `Type`, an optional
