@@ -1,0 +1,66 @@
+name: Release
+
+# Tag a release (e.g. `git tag v0.1.0 && git push --tags`) to cross-compile the
+# plugin for every supported gateway platform and attach the binaries — plus a
+# checksums file — to a GitHub Release. Operators download the build matching
+# their server's OS/arch and drop it in the gateway's plugin directory.
+
+on:
+  push:
+    tags: ["v*"]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  binaries:
+    runs-on: ubuntu-latest
+    if: github.ref_type == 'tag'
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-go@v5
+        with:
+          go-version: "1.26.4"
+          cache: true
+
+      - name: Cross-compile
+        shell: bash
+        run: |
+          set -euo pipefail
+          name="shellcn-plugin-starter" # rename to match your binary
+          version="${GITHUB_REF_NAME}"
+          ldflags="-s -w -X main.version=${version}"
+          mkdir -p dist
+
+          # Pure-Go plugins cross-compile to every target with one toolchain.
+          # A wrong-arch binary fails the gateway handshake cleanly, so shipping
+          # the whole matrix is safe.
+          targets=(
+            "linux/amd64"
+            "linux/arm64"
+            "darwin/amd64"
+            "darwin/arm64"
+            "windows/amd64"
+            "windows/arm64"
+          )
+          for target in "${targets[@]}"; do
+            goos="${target%/*}"
+            goarch="${target#*/}"
+            ext=""
+            [[ "${goos}" == "windows" ]] && ext=".exe"
+            CGO_ENABLED=0 GOOS="${goos}" GOARCH="${goarch}" \
+              go build -trimpath -ldflags "${ldflags}" \
+              -o "dist/${name}-${goos}-${goarch}${ext}" .
+          done
+
+          (cd dist && sha256sum * > checksums.txt)
+
+      - name: Publish GitHub release
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          gh release view "${GITHUB_REF_NAME}" >/dev/null 2>&1 || \
+            gh release create "${GITHUB_REF_NAME}" --title "${GITHUB_REF_NAME}" --generate-notes
+          gh release upload "${GITHUB_REF_NAME}" dist/* --clobber
