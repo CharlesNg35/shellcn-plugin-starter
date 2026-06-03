@@ -1,6 +1,6 @@
 # Agent transport
 
-Some targets aren't reachable directly from the gateway — they live in a private
+Some targets aren't reachable directly from the gateway - they live in a private
 network, behind NAT, or on a host you can only reach from the inside. ShellCN's
 **agent transport** solves this: a small agent binary runs *next to the target*
 and the gateway tunnels through it. A plugin opts in declaratively; the dialing
@@ -17,7 +17,7 @@ Browser → gateway → (agent tunnel) → agent on target host → target servi
 The gateway owns the tunnel, enrollment, and the agent binary. Your plugin only:
 
 1. declares `TransportAgent` and an `AgentProfile`, and
-2. dials through `cfg.Net` as usual — **the same code as direct**.
+2. dials through `cfg.Net` as usual - **the same code as direct**.
 
 Whether `cfg.Net` routes directly or through the agent is invisible to your
 handler. That's the point: you write the dial once.
@@ -59,10 +59,10 @@ one-time token, and waits for the agent to connect back.
 Each artifact is a launch recipe shown to the operator (a `docker run` line, a
 systemd unit, a script). `Template` is filled with `{{.ConnectURL}}` and
 `{{.Token}}`. For large or sensitive payloads use `Delivery: DeliveryURL` and put
-the body in `Content` — the gateway serves it from a single-use signed URL
+the body in `Content` - the gateway serves it from a single-use signed URL
 instead of inlining the token.
 
-## Dialing — unchanged
+## Dialing - unchanged
 
 ```go
 // Works for direct AND agent connections; cfg.Net is wired by the gateway.

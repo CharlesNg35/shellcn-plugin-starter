@@ -1,8 +1,8 @@
 name: Release
 
 # Tag a release (e.g. `git tag v0.1.0 && git push --tags`) to cross-compile the
-# plugin for every supported gateway platform and attach the binaries — plus a
-# checksums file — to a GitHub Release. Operators download the build matching
+# plugin for every supported gateway platform and attach the binaries - plus a
+# checksums file - to a GitHub Release. Operators download the build matching
 # their server's OS/arch and drop it in the gateway's plugin directory.
 
 on:

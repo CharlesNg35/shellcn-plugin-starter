@@ -1,6 +1,6 @@
 # Sessions
 
-The plugin value (`Starter{}`) is a **stateless singleton** — one instance
+The plugin value (`Starter{}`) is a **stateless singleton** - one instance
 serves every connection. All per-connection state lives in a `Session`, which
 `Connect` returns.
 
@@ -24,12 +24,12 @@ type Session interface {
 }
 ```
 
-- **`HealthCheck`** — the gateway probes liveness before reusing an idle
+- **`HealthCheck`** - the gateway probes liveness before reusing an idle
   session. Ping your backend; return an error if it's gone.
-- **`OpenChannel`** — open a tracked byte-stream to the upstream (terminals,
+- **`OpenChannel`** - open a tracked byte-stream to the upstream (terminals,
   exec, port-forwards). Return `plugin.ErrNotSupported` if you have none. See
   [streaming.md](streaming.md).
-- **`Close`** — release everything the connection holds.
+- **`Close`** - release everything the connection holds.
 
 Handlers reach the session by type-asserting `rc.Session`:
 
@@ -40,7 +40,7 @@ func list(rc *plugin.RequestContext) (any, error) {
 }
 ```
 
-Guard shared session state — a session can serve concurrent requests.
+Guard shared session state - a session can serve concurrent requests.
 
 ## ConnectConfig
 
@@ -105,5 +105,5 @@ func (Starter) Connect(ctx context.Context, cfg plugin.ConnectConfig) (plugin.Se
 ```
 
 If your backend is lazily opened, store `cfg.Net` and dial on first use (guard
-with a mutex) — that keeps `Connect` fast and surfaces backend errors on the
+with a mutex) - that keeps `Connect` fast and surfaces backend errors on the
 request that needs them.

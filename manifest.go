@@ -8,18 +8,18 @@ import (
 
 // Starter is the plugin singleton. It is stateless: it only *describes* the
 // plugin (Manifest), lists its endpoints (Routes), and opens a Session when the
-// gateway connects. All per-connection state lives in the Session, never here —
+// gateway connects. All per-connection state lives in the Session, never here -
 // one Starter value serves every connection concurrently.
 type Starter struct{}
 
 // icon is a small helper for Lucide icons (https://lucide.dev). The UI also
-// accepts URLs, emoji, base64 data URIs, and inline SVG — see docs/manifest.md.
+// accepts URLs, emoji, base64 data URIs, and inline SVG - see docs/manifest.md.
 func icon(name string) plugin.Icon {
 	return plugin.Icon{Type: plugin.IconLucide, Value: name}
 }
 
 // Manifest is the plugin's single declarative contract. The gateway reads it
-// once at load time and the frontend renders whatever it declares — there is no
+// once at load time and the frontend renders whatever it declares - there is no
 // per-plugin UI code. This example declares one table panel (the key/value
 // list), a "Set" action that opens a create form, and a per-row "Delete".
 //
@@ -37,7 +37,7 @@ func (Starter) Manifest() plugin.Manifest {
 
 		// Transports the connection form offers. "direct" means the gateway
 		// reaches the target itself. Add plugin.TransportAgent (and an
-		// AgentProfile) to tunnel through an enrolled agent — see docs/agents.md.
+		// AgentProfile) to tunnel through an enrolled agent - see docs/agents.md.
 		SupportedTransports: []plugin.Transport{plugin.TransportDirect},
 
 		// Connection-form fields. This example needs no configuration, so the
@@ -80,7 +80,7 @@ func (Starter) Manifest() plugin.Manifest {
 // Routes are the plugin's endpoints. Each carries the metadata the gateway
 // enforces *before* your handler runs: Permission + Risk feed RBAC, AuditEvent
 // names the audit-log entry, and Input is validated against the schema. Your
-// handler is pure logic — it never sees HTTP, headers, or auth.
+// handler is pure logic - it never sees HTTP, headers, or auth.
 //
 // Risk levels: safe (read), write (create/update), destructive (delete),
 // privileged (shell/exec/raw socket). See docs/routes.md.
@@ -107,7 +107,7 @@ func (Starter) Routes() []plugin.Route {
 // Connect opens a live Session for one connection. The gateway calls it the
 // first time a connection is used and reuses the Session until it idles out.
 // cfg carries the decrypted connection config and a core-built network
-// transport (cfg.Net) for reaching the target — see docs/sessions.md.
+// transport (cfg.Net) for reaching the target - see docs/sessions.md.
 func (Starter) Connect(_ context.Context, _ plugin.ConnectConfig) (plugin.Session, error) {
 	return newSession(), nil
 }

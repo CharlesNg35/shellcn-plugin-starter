@@ -1,13 +1,13 @@
 # Build, install & version
 
 A plugin is a normal Go executable. It's **OS- and arch-specific** (like the
-gateway binary itself) — there's no universal artifact. Build the target that
+gateway binary itself) - there's no universal artifact. Build the target that
 matches your gateway, drop it in the plugin directory, restart.
 
 ## Depending on the SDK
 
 The plugin SDK is a published Go module, pulled from the proxy like any other
-dependency — you do **not** need the gateway's source:
+dependency - you do **not** need the gateway's source:
 
 ```sh
 go get github.com/charlesng35/shellcn/sdk@latest
@@ -67,7 +67,7 @@ The protocol now shows in the connection catalog like any built-in.
 
 - **Update:** replace the binary and restart. If the gateway is configured to
   verify checksums, ship the matching `.sha256` too (operator-side option).
-- **Disable:** set the protocol to *disabled* in Settings → Protocols — it's
+- **Disable:** set the protocol to *disabled* in Settings → Protocols - it's
   hidden and can't open sessions, but stays loaded (re-enable without a restart).
 - **Remove:** delete the binary from the plugin directory and restart.
 
@@ -83,8 +83,8 @@ The protocol now shows in the connection catalog like any built-in.
 ## Trust model
 
 An installed plugin is operator-chosen code that receives the decrypted
-credentials for the connections it serves — treat it like a Terraform provider
+credentials for the connections it serves - treat it like a Terraform provider
 or an IDE extension. Out-of-process execution gives isolation (separate address
 space, killable, can't read other plugins' memory) but not unconditional safety:
 install plugins you trust, from sources you trust. The gateway keeps the guard
-rails — authn/authz, audit, and network egress all stay core-owned.
+rails - authn/authz, audit, and network egress all stay core-owned.

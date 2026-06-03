@@ -24,19 +24,19 @@ your handler runs, and a handler that is pure business logic.
 | `Input`      | Optional `*Schema`; validated by the gateway before the handler runs.   |
 | `Timeout`    | Optional per-request timeout.                                           |
 | `Handle`     | The handler (`func(*RequestContext) (any, error)`).                     |
-| `Stream`     | For `MethodWS` routes only — see [streaming.md](streaming.md).          |
+| `Stream`     | For `MethodWS` routes only - see [streaming.md](streaming.md).          |
 
 ### Risk levels
 
 Risk drives RBAC and shows (read-only) in the UI:
 
-- `RiskSafe` — read-only (list, describe).
-- `RiskWrite` — create/update.
-- `RiskDestructive` — delete, truncate, restore.
-- `RiskPrivileged` — shell, exec, raw socket.
+- `RiskSafe` - read-only (list, describe).
+- `RiskWrite` - create/update.
+- `RiskDestructive` - delete, truncate, restore.
+- `RiskPrivileged` - shell, exec, raw socket.
 
 The gateway resolves the user's role against `Permission`/`Risk` and runs the
-audit wrapper. **A plugin cannot widen its own permissions** — it only ships
+audit wrapper. **A plugin cannot widen its own permissions** - it only ships
 data and handler bodies.
 
 ## Handlers
@@ -60,22 +60,22 @@ func set(rc *plugin.RequestContext) (any, error) {
 
 A handler returns `(value, error)`. The value is JSON-encoded to the client; the
 error maps to an HTTP status. Handlers never see `http.ResponseWriter`, headers,
-cookies, or auth — that's all gateway-side.
+cookies, or auth - that's all gateway-side.
 
 ### The RequestContext
 
 `rc *plugin.RequestContext` is your typed view of the request:
 
-- `rc.Ctx` — the request context (honor cancellation in long calls).
-- `rc.User` — the acting user (`ID`, `Username`, `DisplayName`, `Roles`).
+- `rc.Ctx` - the request context (honor cancellation in long calls).
+- `rc.User` - the acting user (`ID`, `Username`, `DisplayName`, `Roles`).
   Authorization is already enforced; use this only for identity/scoping.
-- `rc.Session` — the per-connection `Session` from `Connect`; type-assert it to
+- `rc.Session` - the per-connection `Session` from `Connect`; type-assert it to
   your concrete type.
-- `rc.Bind(&dst)` — decode the body into a struct and run `validate` tags.
-- `rc.Param("name")` — a path placeholder or renderer-supplied param.
-- `rc.Query()` — raw query values.
-- `rc.Page()` — parsed cursor/limit/filter/sort for list routes.
-- `rc.Audit(result, params, err)` — record an operation inside a long-lived
+- `rc.Bind(&dst)` - decode the body into a struct and run `validate` tags.
+- `rc.Param("name")` - a path placeholder or renderer-supplied param.
+- `rc.Query()` - raw query values.
+- `rc.Page()` - parsed cursor/limit/filter/sort for list routes.
+- `rc.Audit(result, params, err)` - record an operation inside a long-lived
   route (see [streaming.md](streaming.md)).
 
 ## Returning lists
@@ -100,9 +100,9 @@ optional. `p.Search()` returns the grid's free-text term.
 
 Two layers, both before your logic mutates anything:
 
-1. **Schema** (`Route.Input`) — the gateway validates the request against the
+1. **Schema** (`Route.Input`) - the gateway validates the request against the
    manifest schema (required-ness, types, options, visibility, regex/min/max).
-2. **Bind tags** — `rc.Bind` decodes into your struct and runs `validate:"..."`
+2. **Bind tags** - `rc.Bind` decodes into your struct and runs `validate:"..."`
    struct tags.
 
 Declare the schema once and reuse it for the action form and the route:

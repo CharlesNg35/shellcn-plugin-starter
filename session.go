@@ -17,7 +17,7 @@ type entry struct {
 
 // session is the per-connection runtime. The gateway creates one via
 // Starter.Connect and hands it to every handler through rc.Session, so this is
-// where you keep live clients, sockets, caches — anything tied to one
+// where you keep live clients, sockets, caches - anything tied to one
 // connection. Here it is just a guarded map standing in for a real backend.
 type session struct {
 	mu      sync.Mutex
@@ -51,7 +51,7 @@ func (s *session) Close() error { return nil }
 // plugin.Err* sentinels). Handlers never touch HTTP directly.
 
 // list returns every entry. A table panel expects a plugin.Page; for large data
-// sets read rc.Page() for cursor/limit/sort/filter — see docs/routes.md.
+// sets read rc.Page() for cursor/limit/sort/filter - see docs/routes.md.
 func list(rc *plugin.RequestContext) (any, error) {
 	s := rc.Session.(*session)
 	s.mu.Lock()
