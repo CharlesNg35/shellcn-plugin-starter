@@ -100,6 +100,25 @@ func (s *session) OpenChannel(ctx context.Context, req plugin.ChannelRequest) (p
 Channel kinds: `StreamTerminal`, `StreamLogs`, `StreamDesktop`, `StreamMetrics`,
 `StreamFile`.
 
+### Resizable terminals and desktop init (optional channel methods)
+
+A `Channel` can carry two control capabilities by simply adding methods - the
+gateway detects them and wires them up (this works the same for built-in and
+external plugins):
+
+```go
+// Terminal/exec: let the browser resize the pty.
+func (c *shellChannel) Resize(cols, rows int) error { return c.pty.Setsize(cols, rows) }
+
+// Desktop (VNC/RDP): the one-time server-init blob the client needs to start.
+func (c *desktopChannel) ServerInit() []byte { return c.serverInit }
+```
+
+If your channel implements `Resize(cols, rows int) error`, the gateway forwards
+browser resize events to it. If it implements `ServerInit() []byte`, the gateway
+hands that blob to the client when the screen opens. Channels without these
+methods are unaffected - a plain logs channel stays plain.
+
 ## Declaring streams in the manifest
 
 Pair each WS route with a `Stream` entry (its `Kind` tells the UI how to render)
