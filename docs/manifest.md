@@ -40,15 +40,15 @@ Everything below is optional except identity, `Layout`, and at least one
 
 ## Identity
 
-| Field         | Notes                                                               |
-| ------------- | ------------------------------------------------------------------- |
-| `APIVersion`  | Always `plugin.CurrentAPIVersion`. A mismatch is refused at load.   |
+| Field         | Notes                                                                                                  |
+| ------------- | ------------------------------------------------------------------------------------------------------ |
+| `APIVersion`  | Always `plugin.CurrentAPIVersion`. A mismatch is refused at load.                                      |
 | `Name`        | Unique, lowercase id (`redis`, `acme-db`). Stored on every connection - don't change it after release. |
-| `Version`     | Your plugin's own version string (bump per release).                |
-| `Title`       | Human label in the catalog and workspace.                           |
-| `Description` | One line in the protocol picker.                                    |
-| `Icon`        | See [Icon](#icon).                                                   |
-| `Category`    | Groups the protocol in the picker (see [Category](#category)).      |
+| `Version`     | Your plugin's own version string (bump per release).                                                   |
+| `Title`       | Human label in the catalog and workspace.                                                              |
+| `Description` | One line in the protocol picker.                                                                       |
+| `Icon`        | See [Icon](#icon).                                                                                     |
+| `Category`    | Groups the protocol in the picker (see [Category](#category)).                                         |
 
 ### Icon
 
@@ -95,22 +95,22 @@ Config: plugin.Schema{Groups: []plugin.Group{{
 
 ### Field
 
-| Field             | Purpose                                                          |
-| ----------------- | ---------------------------------------------------------------- |
-| `Key`             | Config key; how you read it at runtime (`cfg.String("host")`).   |
-| `Label`           | Form label.                                                      |
-| `Type`            | Widget (see below).                                              |
-| `Required`        | Validated server-side before save and before route handlers.    |
-| `Secret`          | Encrypted at rest; never returned to the client. Use for keys/passwords. |
-| `Default`         | Pre-filled value.                                                |
-| `Placeholder` / `Help` | Hints shown in the form.                                    |
-| `Options`         | Static choices for select/radio/multiselect.                     |
-| `OptionsSource`   | A `*DataSource` to populate choices from a route at form-open.   |
-| `Credential`      | A `*CredentialSelector` for `FieldCredentialRef` (stores only the chosen credential id). |
-| `VisibleWhen`     | A `*Condition` - show the field only when other values match.    |
-| `Validators`      | Server-side checks (`min`/`max`/`regex`/`oneOf`).                |
-| `Step`            | Increment for number/slider.                                     |
-| `Fields` / `Item` / `MinItems` / `MaxItems` / `ItemLabel` / `AddLabel` / `KeyLabel` | Composite shapes - see [composite fields](#composite-fields). |
+| Field                                                                               | Purpose                                                                                  |
+| ----------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------- |
+| `Key`                                                                               | Config key; how you read it at runtime (`cfg.String("host")`).                           |
+| `Label`                                                                             | Form label.                                                                              |
+| `Type`                                                                              | Widget (see below).                                                                      |
+| `Required`                                                                          | Validated server-side before save and before route handlers.                             |
+| `Secret`                                                                            | Encrypted at rest; never returned to the client. Use for keys/passwords.                 |
+| `Default`                                                                           | Pre-filled value.                                                                        |
+| `Placeholder` / `Help`                                                              | Hints shown in the form.                                                                 |
+| `Options`                                                                           | Static choices for select/radio/multiselect.                                             |
+| `OptionsSource`                                                                     | A `*DataSource` to populate choices from a route at form-open.                           |
+| `Credential`                                                                        | A `*CredentialSelector` for `FieldCredentialRef` (stores only the chosen credential id). |
+| `VisibleWhen`                                                                       | A `*Condition` - show the field only when other values match.                            |
+| `Validators`                                                                        | Server-side checks (`min`/`max`/`regex`/`oneOf`).                                        |
+| `Step`                                                                              | Increment for number/slider.                                                             |
+| `Fields` / `Item` / `MinItems` / `MaxItems` / `ItemLabel` / `AddLabel` / `KeyLabel` | Composite shapes - see [composite fields](#composite-fields).                            |
 
 Field types: `FieldText`, `FieldTextarea`, `FieldPassword`, `FieldEmail`,
 `FieldURL`, `FieldTel`, `FieldNumber`, `FieldStepper`, `FieldSlider`,
@@ -120,11 +120,44 @@ Field types: `FieldText`, `FieldTextarea`, `FieldPassword`, `FieldEmail`,
 
 ### Conditions (`VisibleWhen`)
 
-A `Condition` is `AllOf`/`AnyOf` lists of `Rule{Field, Op, Value}`. Operators:
-`OpEq`, `OpNeq`, `OpIn`, `OpNin`, `OpEmpty`, `OpNotEmpty`. Two context keys are
-available besides field values: `SchemaContextTransport` (`$transport`) and
-`SchemaContextProtocol` (`$protocol`) - e.g. show a field only for the direct
-transport.
+A `Condition` is `AllOf`/`AnyOf` lists of `Rule{Field, Op, Value}` evaluated
+against the other field values. A field with a `VisibleWhen` is shown (and
+required/validated) only when its condition holds. Operators: `OpEq`, `OpNeq`,
+`OpIn`, `OpNin`, `OpEmpty`, `OpNotEmpty`.
+
+Besides field keys, two context keys are available so a field can depend on the
+chosen **transport** or the protocol: `SchemaContextTransport` (`$transport`) and
+`SchemaContextProtocol` (`$protocol`).
+
+**Transport-conditional fields.** This is the most common use: when a connection
+runs through an agent, the agent supplies the endpoint, so the host/port/socket
+fields should disappear. Define a condition once and reuse it across fields (this
+is exactly how the built-in `docker` plugin does it):
+
+```go
+func configSchema() plugin.Schema {
+    // Only when the user picks the direct transport.
+    directOnly := plugin.Condition{AllOf: []plugin.Rule{
+        {Field: plugin.SchemaContextTransport, Op: plugin.OpEq, Value: string(plugin.TransportDirect)},
+    }}
+    // Combine rules: direct transport AND a specific endpoint_type value.
+    directTCP := plugin.Condition{AllOf: []plugin.Rule{
+        {Field: plugin.SchemaContextTransport, Op: plugin.OpEq, Value: string(plugin.TransportDirect)},
+        {Field: "endpoint_type", Op: plugin.OpEq, Value: "tcp"},
+    }}
+    return plugin.Schema{Groups: []plugin.Group{{Name: "Connection", Fields: []plugin.Field{
+        {Key: "endpoint_type", Label: "Endpoint", Type: plugin.FieldSelect, Default: "unix",
+         VisibleWhen: &directOnly, Options: []plugin.Option{{Label: "Socket", Value: "unix"}, {Label: "TCP", Value: "tcp"}}},
+        {Key: "host", Label: "Host", Type: plugin.FieldText, Required: true, VisibleWhen: &directTCP},
+        {Key: "port", Label: "Port", Type: plugin.FieldNumber, Default: 2375, VisibleWhen: &directTCP},
+    }}}}
+}
+```
+
+A hidden field is not required and not validated, so gating a `Required` field
+behind a `VisibleWhen` is safe. The renderer hides the field live as the user
+toggles the transport or another value; the server applies the same rules when it
+validates the saved config.
 
 ### Validators
 
@@ -154,9 +187,22 @@ by kind:
 
 Built-in kinds: `CredentialDBPassword`, `CredentialAPIToken`,
 `CredentialBasicAuth`, `CredentialBearerToken`, `CredentialTLSClientCert`,
-`CredentialCloudAccessKey`. To define your own, list `CredentialKindInfo`
-entries in `Manifest.CredentialKinds`. The field stores only the credential id;
-the gateway resolves and injects the secret - the client never sees it.
+`CredentialCloudAccessKey`. To define your own kind, list `CredentialKindInfo`
+entries in `Manifest.CredentialKinds`:
+
+```go
+CredentialKinds: []plugin.CredentialKindInfo{{
+    Kind:          "acme_api_key",
+    Label:         "ACME API key",
+    SecretLabel:   "API key",   // labels the secret input in the credential form
+    IdentityLabel: "Key ID",    // optional non-secret identity (e.g. username/key id)
+}},
+```
+
+Reference it from a `credential_ref` field's `CredentialSelector{Kinds: ...}`. The
+field stores only the credential id; the gateway resolves and injects the secret,
+which you read with `cfg.CredentialSecretFor(...)` (see
+[sessions.md](sessions.md)). The client never sees it.
 
 ### Composite fields
 
@@ -169,12 +215,12 @@ the gateway resolves and injects the secret - the client never sees it.
 
 `Layout` arranges the connection workspace:
 
-| Layout               | Use for                                                    |
-| -------------------- | ---------------------------------------------------------- |
-| `LayoutTabs`         | A flat tab bar, one `Panel` at a time (most plugins).      |
-| `LayoutSidebarTree`  | A resource `Tree` on the left + a detail pane.             |
-| `LayoutDashboard`    | A grid of panels (from `Tabs`) shown at once.              |
-| `LayoutSingle`       | One full-bleed panel (a terminal/desktop/file screen).     |
+| Layout              | Use for                                                |
+| ------------------- | ------------------------------------------------------ |
+| `LayoutTabs`        | A flat tab bar, one `Panel` at a time (most plugins).  |
+| `LayoutSidebarTree` | A resource `Tree` on the left + a detail pane.         |
+| `LayoutDashboard`   | A grid of panels (from `Tabs`) shown at once.          |
+| `LayoutSingle`      | One full-bleed panel (a terminal/desktop/file screen). |
 
 ## Panels (`Tabs`)
 
@@ -193,24 +239,24 @@ Tabs: []plugin.Panel{{
 
 ### Panel types and their config
 
-| `PanelType`           | Config type           | Renders                              |
-| --------------------- | --------------------- | ------------------------------------ |
-| `PanelTable`          | `TableConfig`         | A data grid (optionally editable).   |
-| `PanelForm`           | `FormPanelConfig`     | A submit form.                       |
-| `PanelTerminal`       | `TerminalConfig`      | An xterm terminal (WS route).        |
-| `PanelLogStream`      | -                     | A live log tail (WS route).          |
-| `PanelQueryEditor`    | `QueryEditorConfig`   | A SQL/query editor + results.        |
-| `PanelFileBrowser`    | `FileBrowserConfig`   | A file manager.                      |
-| `PanelCodeEditor`     | `CodeEditorConfig`    | A Monaco editor.                     |
-| `PanelMetrics`        | `MetricsConfig`       | KPI cards, gauges, time-series.      |
-| `PanelGraph`          | `GraphConfig`         | A node/edge graph.                   |
-| `PanelTrace`          | `TraceConfig`         | A distributed-trace view.            |
-| `PanelKV`             | `KVConfig`            | A key/value browser.                 |
-| `PanelHTTPClient`     | `HTTPClientConfig`    | A REST client.                       |
-| `PanelRemoteDesktop`  | `RemoteDesktopConfig` | A VNC/RDP screen.                    |
-| `PanelDocument`       | -                     | Rendered document/markdown.          |
-| `PanelDashboard`      | `DashboardConfig`     | A grid of nested panels (`Cells`).   |
-| `PanelEnroll`         | -                     | The agent-enrollment screen.         |
+| `PanelType`          | Config type           | Renders                            |
+| -------------------- | --------------------- | ---------------------------------- |
+| `PanelTable`         | `TableConfig`         | A data grid (optionally editable). |
+| `PanelForm`          | `FormPanelConfig`     | A submit form.                     |
+| `PanelTerminal`      | `TerminalConfig`      | An xterm terminal (WS route).      |
+| `PanelLogStream`     | -                     | A live log tail (WS route).        |
+| `PanelQueryEditor`   | `QueryEditorConfig`   | A SQL/query editor + results.      |
+| `PanelFileBrowser`   | `FileBrowserConfig`   | A file manager.                    |
+| `PanelCodeEditor`    | `CodeEditorConfig`    | A Monaco editor.                   |
+| `PanelMetrics`       | `MetricsConfig`       | KPI cards, gauges, time-series.    |
+| `PanelGraph`         | `GraphConfig`         | A node/edge graph.                 |
+| `PanelTrace`         | `TraceConfig`         | A distributed-trace view.          |
+| `PanelKV`            | `KVConfig`            | A key/value browser.               |
+| `PanelHTTPClient`    | `HTTPClientConfig`    | A REST client.                     |
+| `PanelRemoteDesktop` | `RemoteDesktopConfig` | A VNC/RDP screen.                  |
+| `PanelDocument`      | -                     | Rendered document/markdown.        |
+| `PanelDashboard`     | `DashboardConfig`     | A grid of nested panels (`Cells`). |
+| `PanelEnroll`        | -                     | The agent-enrollment screen.       |
 
 `TableConfig` is documented in depth below; the other `*Config` structs follow
 the same idea (they mostly name the route IDs the panel calls and a few display
@@ -254,6 +300,11 @@ plugin.TableConfig{
 (poll-and-replace), `Watch` (a stream that patches rows), `Editable`+`RowKey`+
 `Insert`/`Update`/`Delete` (inline editing), `StagedEdits`, `EmptyText`. Column
 `Key`s must match the JSON field names your list route returns.
+
+For an **editable grid**, set `Editable: true`, name the primary-key column(s) in
+`RowKey`, and point `Insert`/`Update`/`Delete` at mutation routes; the gateway
+sends each edited row as JSON to those routes. The `plugins/postgresql` and
+`plugins/docker` built-ins are full working examples.
 
 ## Actions
 
@@ -304,10 +355,42 @@ chosen value(s) in a handler with `rc.Param("<param>")` / `rc.ParamList`.
 
 ## Transports
 
-`SupportedTransports` lists what the connection form offers - `TransportDirect`
-(the gateway reaches the target) and/or `TransportAgent` (tunnel through an
-enrolled agent; requires `Agent *AgentProfile`). Your handler code is identical
-either way. See [agents.md](agents.md).
+ShellCN supports exactly two transports, and `SupportedTransports` lists which
+of them your connection form offers:
+
+| Transport         | Meaning                                                                                             |
+| ----------------- | --------------------------------------------------------------------------------------------------- |
+| `TransportDirect` | The gateway reaches the target itself (you give it host/port).                                      |
+| `TransportAgent`  | The gateway tunnels through an agent running next to the target. Requires an `Agent *AgentProfile`. |
+
+Declare one or both. Your handler and session code are **identical** either way -
+you always dial through `cfg.Net` (see [sessions.md](sessions.md)); the gateway
+wires it to a direct dial or the agent tunnel for you.
+
+```go
+// Direct-only (most plugins):
+SupportedTransports: []plugin.Transport{plugin.TransportDirect},
+
+// Both - the form lets the user choose; add an AgentProfile for the agent path:
+SupportedTransports: []plugin.Transport{plugin.TransportDirect, plugin.TransportAgent},
+Agent: &plugin.AgentProfile{
+    Proxy: plugin.ProxyTarget{Mode: plugin.AgentTCP, Address: "127.0.0.1:5432", Risk: plugin.RiskPrivileged},
+    Install: []plugin.InstallArtifact{
+        {Label: "Docker", Kind: "docker", Template: "docker run ... {{.ConnectURL}} {{.Token}}"},
+    },
+},
+```
+
+When you offer both, hide the direct-only config fields (host, port, socket) under
+the agent transport with a `$transport` condition - see
+[Conditions](#conditions-visiblewhen). Full agent details: [agents.md](agents.md).
+
+## Capabilities
+
+`Capabilities []Capability` are free-form, declarative feature tags (e.g.
+`"metrics"`, `"promql"`, `"exec"`). They are descriptive only - the gateway does
+**not** dispatch behavior on them; routes and panels drive everything. Use them to
+advertise what the plugin can do; leave the slice empty if you have nothing to tag.
 
 ## Streaming & recording
 

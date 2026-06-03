@@ -67,7 +67,7 @@ The protocol now shows in the connection catalog like any built-in.
 
 - **Update:** replace the binary and restart. If the gateway is configured to
   verify checksums, ship the matching `.sha256` too (operator-side option).
-- **Disable:** set the protocol to *disabled* in Settings → Protocols - it's
+- **Disable:** set the protocol to _disabled_ in Settings → Protocols - it's
   hidden and can't open sessions, but stays loaded (re-enable without a restart).
 - **Remove:** delete the binary from the plugin directory and restart.
 
@@ -79,6 +79,57 @@ The protocol now shows in the connection catalog like any built-in.
   pair is rejected at load, never half-works.
 - Bump your own `Manifest.Version` per release so operators see what they're
   running.
+
+## Runtime model
+
+A few facts about how the binary runs, so nothing surprises you:
+
+- **One protocol per binary.** `sdk.Serve(p)` serves a single plugin and blocks
+  until the gateway disconnects. Ship one binary per protocol.
+- **The gateway owns the process.** It spawns your binary at startup, talks gRPC
+  over a local, mutually-authenticated channel, and kills it on shutdown. If your
+  process exits or panics, the gateway respawns it with bounded backoff - so
+  don't `panic` for expected errors; return them (see below).
+- **Sessions are reused.** `Connect` runs once per connection; the `Session` is
+  reused across requests and `Close`d when it idles out.
+
+## Don't write to stdout
+
+go-plugin performs its handshake over the binary's **stdout**. If your plugin
+prints anything to stdout (a stray `fmt.Println`, a library that logs there), it
+corrupts the handshake and the plugin fails to load. Send all logging to
+**stderr**:
+
+```go
+log.SetOutput(os.Stderr) // the stdlib logger
+slog.SetDefault(slog.New(slog.NewTextHandler(os.Stderr, nil)))
+fmt.Fprintln(os.Stderr, "debug ...") // ad-hoc
+```
+
+## Logging and diagnosing problems
+
+The gateway captures your plugin's **stderr** and forwards it into its own
+structured logs, tagged with `component=extplugin` and `plugin=<your-binary>`
+(it parses standard log-level prefixes, so `[ERROR] ...` is logged at error). So
+logging to stderr is fine and shows up in the operator's logs - just never write
+to stdout.
+
+For your own debugging, two stronger signals than logs:
+
+- **Return errors.** A wrapped `plugin.Err*` from a handler reaches the user as a
+  clear message and is recorded in the audit log. That's your primary signal.
+- **Unit-test handlers** with `sdk/plugintest` (fake transports) and
+  `plugin.NewRequestContext` - this is where you debug logic, before the binary
+  ever loads. See [best-practices.md](best-practices.md).
+
+## Common load failures
+
+| Symptom                                    | Cause                                                  |
+| ------------------------------------------ | ------------------------------------------------------ |
+| Handshake fails immediately at load        | Wrong OS/arch binary, or something wrote to stdout.    |
+| Plugin rejected at load with a clear error | Invalid manifest (`plugin.Validate` catches it early). |
+| Protocol vanishes then reappears           | The subprocess crashed; the gateway respawned it.      |
+| Version mismatch error                     | `APIVersion`/wire version unsupported by the gateway.  |
 
 ## Trust model
 

@@ -2,7 +2,7 @@
 
 Some targets aren't reachable directly from the gateway - they live in a private
 network, behind NAT, or on a host you can only reach from the inside. ShellCN's
-**agent transport** solves this: a small agent binary runs *next to the target*
+**agent transport** solves this: a small agent binary runs _next to the target_
 and the gateway tunnels through it. A plugin opts in declaratively; the dialing
 code stays identical.
 
@@ -44,15 +44,20 @@ When the user picks the **agent** transport in the connection form, the gateway
 renders an enrollment panel from `Install` (no UI code from you), mints a
 one-time token, and waits for the agent to connect back.
 
+Because the agent supplies the endpoint, hide your direct-only config fields
+(host, port, socket path) under the agent transport with a `VisibleWhen`
+condition on `$transport`. See the transport-conditional example in
+[manifest.md](manifest.md#conditions-visiblewhen).
+
 ### ProxyTarget
 
-| Field       | Purpose                                                            |
-| ----------- | ------------------------------------------------------------------ |
-| `Mode`      | `AgentTCP`, `AgentUnix`, `AgentHTTP` (L7 proxy), `AgentHostMonitor`. |
-| `Address`   | Default target address from the agent's vantage point.             |
-| `Risk`      | Risk of opening the tunnel (usually `RiskPrivileged`).             |
-| `Forward`   | Allow per-stream target addresses instead of only `Address`.       |
-| `TokenFile` / `CAFile` | Optional credential/CA paths on the agent host.         |
+| Field                  | Purpose                                                              |
+| ---------------------- | -------------------------------------------------------------------- |
+| `Mode`                 | `AgentTCP`, `AgentUnix`, `AgentHTTP` (L7 proxy), `AgentHostMonitor`. |
+| `Address`              | Default target address from the agent's vantage point.               |
+| `Risk`                 | Risk of opening the tunnel (usually `RiskPrivileged`).               |
+| `Forward`              | Allow per-stream target addresses instead of only `Address`.         |
+| `TokenFile` / `CAFile` | Optional credential/CA paths on the agent host.                      |
 
 ### InstallArtifact
 
@@ -74,7 +79,7 @@ agent's HTTP proxy when the connection is agent-mode.
 
 ## Trust
 
-An agent opens a path *into* the operator's network, so it's a privileged
+An agent opens a path _into_ the operator's network, so it's a privileged
 capability. Enrollment, the tunnel, and the agent binary are all gateway-owned;
 your plugin only declares the profile. Operators control which protocols are
 available at all from **Settings → Protocols**.
