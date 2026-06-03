@@ -135,4 +135,13 @@ context); the gateway maps them to HTTP status codes:
 
 For multipart routes, declare a `FieldFile` in the input schema and read parts
 with `rc.Uploads("field")`. To stream a download back, return a
-`*plugin.Download`. (Most plugins don't need either.)
+`*plugin.Download` (set exactly one of `Body`, `Seeker`, or `OpenRange`; `Seeker`
+gives the client range requests for free). Most plugins need neither.
+
+## Snippets (saved commands)
+
+The gateway offers a generic, user-owned store of saved commands/queries, scoped
+per protocol. A handler reaches it through `rc.Snippets`, a `plugin.SnippetStore`
+(`Create`/`Get`/`ListByOwner`/`Update`/`Delete` over `plugin.Snippet`). Scope by
+`rc.User.ID` and your plugin `Name`. The SSH plugin uses this for saved shell
+snippets. It's optional - ignore it if your protocol has no such concept.

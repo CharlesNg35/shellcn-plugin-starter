@@ -107,3 +107,33 @@ func (Starter) Connect(ctx context.Context, cfg plugin.ConnectConfig) (plugin.Se
 If your backend is lazily opened, store `cfg.Net` and dial on first use (guard
 with a mutex) - that keeps `Connect` fast and surfaces backend errors on the
 request that needs them.
+
+## Open in browser (HTTPProxy)
+
+If your target serves a web UI (a dashboard, a container's exposed port, a DB
+admin page), your Session can surface it in the browser. Implement the optional
+`plugin.HTTPProxy` interface and reverse-proxy to the upstream through `cfg.Net`:
+
+```go
+type HTTPProxy interface {
+    ServeHTTPProxy(w http.ResponseWriter, r *http.Request)
+}
+
+func (s *session) ServeHTTPProxy(w http.ResponseWriter, r *http.Request) {
+    u, err := url.Parse(s.upstream)
+    if err != nil {
+        http.Error(w, "no upstream", http.StatusBadGateway)
+        return
+    }
+    rp := httputil.NewSingleHostReverseProxy(u)
+    rp.Transport = &http.Transport{DialContext: s.net.DialContext} // egress via the gateway
+    rp.ServeHTTP(w, r)
+}
+```
+
+The gateway authenticates and authorizes the request, then serves your proxy
+under `/api/connections/{id}/proxy/...`, so redirects, assets, and WebSocket
+upgrades pass through. To give the user a link, return that proxy URL from a
+route and bind it to an `Action` with `Open: plugin.OpenURL`. The built-ins
+(kubernetes, docker) use the gateway's `webproxy` helper to also rewrite HTML and
+asset URLs onto the proxy prefix; read those for a full example.

@@ -69,3 +69,4 @@ You write protocol logic; the gateway owns everything around it:
 4. [Streaming](streaming.md) - terminals, logs, channels, recording.
 5. [Agents](agents.md) - reaching targets in a private network.
 6. [Build & install](build-and-install.md) - compile, ship, load, version.
+7. [Best practices](best-practices.md) - conventions distilled from the built-ins.

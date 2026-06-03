@@ -212,6 +212,12 @@ Tabs: []plugin.Panel{{
 | `PanelDashboard`      | `DashboardConfig`     | A grid of nested panels (`Cells`).   |
 | `PanelEnroll`         | -                     | The agent-enrollment screen.         |
 
+`TableConfig` is documented in depth below; the other `*Config` structs follow
+the same idea (they mostly name the route IDs the panel calls and a few display
+options). Their fields are small and self-describing in the SDK types - check the
+`plugin` package godoc and the matching built-in (e.g. `plugins/prometheus` for
+`MetricsConfig`, `plugins/postgresql` for `QueryEditorConfig`) for a live example.
+
 ### DataSource
 
 A panel (or column source, watch, action) binds to a route by id:

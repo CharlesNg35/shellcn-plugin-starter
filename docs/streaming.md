@@ -138,3 +138,31 @@ Recording: []plugin.RecordingCapability{
 Terminal sessions record as `FormatAsciicastV2`; desktops as `FormatWebMCanvas`
 (`RecordingDesktop`). Operators choose the recording _policy_ per connection
 (off / on-demand / always); you only declare what's _possible_.
+
+## Live lists (watch)
+
+A table or resource list can update in place from a stream instead of
+re-fetching. Point `TableConfig.Watch` (or `ResourceType.Watch`) at a WS route,
+and have that stream handler emit `plugin.ResourceEvent` values onto the client:
+
+```go
+func watch(rc *plugin.RequestContext, client plugin.ClientStream) error {
+    enc := json.NewEncoder(client)
+    for ev := range changes { // your backend's change feed
+        e := plugin.ResourceEvent{
+            Type:     "modified", // "added" | "modified" | "deleted"
+            Ref:      plugin.ResourceRef{Kind: "container", Name: ev.Name, UID: ev.ID},
+            Resource: ev.Row,
+        }
+        if err := enc.Encode(e); err != nil {
+            return err
+        }
+    }
+    return nil
+}
+```
+
+The gateway patches the grid row keyed by `Ref.UID`. This is how the container
+and Kubernetes plugins show live status. The same `ResourceRef`/event shape backs
+lazy tree expansion: a `TreeGroup.Source` (or a `TreeNode.ChildrenSource`) route
+returns `plugin.TreeNode` values, and the renderer expands them on click.

@@ -63,6 +63,7 @@ It now appears in the connection catalog like any built-in protocol.
 - [Streaming](docs/streaming.md) - terminals, logs, channels, recording.
 - [Agents](docs/agents.md) - tunnelling into a private network.
 - [Build & install](docs/build-and-install.md) - compile, ship, load, version.
+- [Best practices](docs/best-practices.md) - conventions from the built-in plugins.
 
 ## License
 
