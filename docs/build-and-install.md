@@ -45,6 +45,9 @@ done
 binaries (with `checksums.txt`) to a GitHub Release. A wrong-arch binary fails
 the gateway handshake cleanly, so shipping the whole matrix is safe.
 
+To publish the plugin in the Marketplace, submit the release manifest to
+[shellcn-plugin-registry](https://github.com/CharlesNg35/shellcn-plugin-registry).
+
 ## Install into a gateway
 
 1. Find the gateway's plugin directory: config key `plugins.dir` (env

@@ -42,6 +42,8 @@ It now appears in the connection catalog like any built-in protocol.
    protocol's manifest, routes, and session logic.
 3. Tag a release - `.github/workflows/release.yml` cross-compiles the binary for
    every gateway platform and attaches it (with checksums) to a GitHub Release.
+4. To publish it in the Marketplace, submit the release manifest to
+   [shellcn-plugin-registry](https://github.com/CharlesNg35/shellcn-plugin-registry).
 
 ## Where things live
 
