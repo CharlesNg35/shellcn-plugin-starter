@@ -132,8 +132,9 @@ func (s *session) ServeHTTPProxy(w http.ResponseWriter, r *http.Request) {
 ```
 
 The gateway authenticates and authorizes the request, then serves your proxy
-under `/api/connections/{id}/proxy/...`, so redirects, assets, and WebSocket
-upgrades pass through. To give the user a link, return that proxy URL from a
-route and bind it to an `Action` with `Open: plugin.OpenURL`. The built-ins
-(kubernetes, docker) use the gateway's `webproxy` helper to also rewrite HTML and
-asset URLs onto the proxy prefix; read those for a full example.
+under a per-connection mount, so redirects, assets, and WebSocket upgrades pass
+through. The mount is core-owned - never hardcode it. To give the user a link,
+return `rc.ProxyURL()` from a route and bind it to an `Action` with
+`Open: plugin.OpenURL`; inside `ServeHTTPProxy`, read the mount with
+`plugin.RequestProxyPrefix(r)` when rewriting paths. See
+[web-proxy.md](web-proxy.md) for the full story.

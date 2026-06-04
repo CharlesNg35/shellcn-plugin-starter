@@ -19,17 +19,17 @@ type HTTPProxy interface {
 }
 ```
 
-The gateway mounts a per-connection path:
+The gateway mounts a per-connection path (today
+`/api/connections/{id}/proxy/{your-sub-path...}`) - but the mount is
+**core-owned URL space: never hardcode it**. The gateway hands it to you where
+you need it: `rc.ProxyURL(...)` in route handlers and
+`plugin.RequestProxyPrefix(r)` inside `ServeHTTPProxy`.
 
-```
-/api/connections/{id}/proxy/{your-sub-path...}
-```
-
-Every request under it is authenticated against the connection, then handed to
-your session's `ServeHTTPProxy`. The wildcard (everything after `/proxy/`) arrives
-as `r.URL.Path` - you decide what it means (which port, which service, which file).
-If your session doesn't implement the interface, the gateway returns
-`ErrNotSupported`.
+Every request under the mount is authenticated against the connection, then
+handed to your session's `ServeHTTPProxy`. The wildcard (everything after the
+mount) arrives as `r.URL.Path` - you decide what it means (which port, which
+service, which file). If your session doesn't implement the interface, the
+gateway returns `ErrNotSupported`.
 
 ## Implementing it
 
@@ -44,7 +44,9 @@ func (s *Session) ServeHTTPProxy(w http.ResponseWriter, r *http.Request) {
         http.Error(w, "unsupported proxy target", http.StatusBadRequest)
         return
     }
-    prefix := "/api/connections/" + s.connID + "/proxy"
+    // The public mount, supplied by the gateway (and stripped from the request
+    // so it is never forwarded upstream).
+    prefix := plugin.RequestProxyPrefix(r)
     proxy := &httputil.ReverseProxy{
         Director: func(req *http.Request) {
             req.URL.Scheme = "http"
@@ -76,14 +78,13 @@ detail button can open it:
 
 ```go
 func proxyURL(rc *plugin.RequestContext) (any, error) {
-    s, err := sess(rc)
-    if err != nil {
-        return nil, err
-    }
-    u := "/api/connections/" + s.connID + "/proxy/" + rc.Param("port") + "/"
-    return map[string]any{"url": u}, nil
+    return map[string]any{"url": rc.ProxyURL(rc.Param("port"))}, nil
 }
 ```
+
+`rc.ProxyURL(segments...)` joins the core-supplied mount with path-escaped
+segments and a trailing slash; `rc.ProxyPrefix()` returns the bare mount. Bind
+the route to an `Action` with `Open: plugin.OpenURL`.
 
 ## Rewriting is the hard part
 
