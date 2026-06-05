@@ -185,6 +185,32 @@ safe to interpolate. Re-check anything security-sensitive yourself - validate an
 identifier against a whitelist before it touches a query (see
 [explorer.md](explorer.md#build-sql-safely)).
 
+## Schema UX: use the most specific control
+
+The frontend is generic, so the plugin schema is the UX. Pick field types that
+match the user's decision:
+
+- Use `FieldSelect` or `FieldRadio` for closed vocabularies. Examples:
+  authentication mode, TLS mode, restart policy, backup compression, power
+  action, constraint type.
+- Use `FieldMultiSelect` with `Options` or `OptionsSource` when the user chooses
+  several known values. Examples: SQL columns for an index, privileges, namespace
+  filters.
+- Use `FieldAutocomplete` when there are common suggestions but custom values
+  are still valid. Examples: SQL column types, S3 regions for custom endpoints,
+  container network names, plugin driver names.
+- Use `FieldText` only for genuinely open values. Examples: resource names,
+  paths, expressions, usernames, socket paths, scopes, glob patterns.
+- Use `FieldToggle`, `FieldStepper`, `FieldNumber`, `FieldDuration`,
+  `FieldTextarea`, `FieldJSON`, `FieldArray`, `FieldObject`, and `FieldMap`
+  where they describe the shape better than text.
+
+Static `Options` are validated by the gateway for `select`, `radio`, and
+`multiselect`. Do not use a closed control for extensible backend concepts
+unless you really want to reject custom values. For runtime choices, prefer
+`OptionsSource` pointing at a safe read route, so forms show the target's current
+databases, schemas, columns, namespaces, containers, or buckets.
+
 ## Errors: wrap a sentinel, never return it bare
 
 The gateway maps `plugin.Err*` to HTTP status codes. Always add context with
@@ -260,7 +286,7 @@ Keep the catalog (kind -> columns, actions, detail tabs) as data, so adding a ki
 is a data change, not new routes. Permissions still apply per-route, so group
 kinds that share a risk level.
 
-## Streaming: bridge, watch the client, tear down
+## Streaming: declare the right kind, watch the client, tear down
 
 For a terminal/exec, open an upstream channel and pump both ways, exiting on
 client disconnect:
@@ -290,6 +316,18 @@ func shell(rc *plugin.RequestContext, client plugin.ClientStream) error {
 in-band resize frames for you - just implement `plugin.Resizer` (`Resize(cols,
 rows int) error`) on your channel. See [streaming.md](streaming.md) for the
 details and recording.
+
+Declare stream kinds by browser behavior:
+
+- `StreamTerminal` and `StreamDesktop` mean interactive streams with a continuous
+  browser-to-upstream read loop. The gateway may apply WebSocket keepalive policy
+  to these because pong frames are processed by that reader.
+- `StreamLogs`, `StreamMetrics`, and `StreamFile` are server-to-browser streams.
+  Do not label logs, watches, metrics, or long-running query results as terminal
+  streams just because they use WebSockets; that can cause false idle timeouts.
+
+If a future stream shape is bidirectional, only treat it like terminal/desktop
+when the handler continuously reads from the browser for the life of the stream.
 
 ## Test the manifest and the handlers
 
