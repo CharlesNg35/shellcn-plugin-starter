@@ -312,6 +312,15 @@ func TestManifestValidates(t *testing.T) {
 Build a session, then drive a handler with `plugin.NewRequestContext(ctx, user,
 sess, params, query, body)` and assert the returned value. Run `go test -race`.
 
+Test the ShellCN panel payload, not only the upstream API payload. For example:
+
+- `PanelQueryEditor` sends `{ "query": "...", "confirm": false }`.
+- `PanelCodeEditor` sends `{ "content": "..." }` unless `SaveBodyKey` is set.
+
+If your handler forwards requests to another API, add a test that uses the same
+shape the gateway sends. That catches manifest and route contract mistakes before
+release.
+
 ## A few don'ts
 
 - Don't dial the target yourself - use `cfg.Net`.

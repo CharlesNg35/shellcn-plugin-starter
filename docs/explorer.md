@@ -337,6 +337,15 @@ the handler report each statement through `rc.Audit(...)` so long-running consol
 work is recorded. Honor `rc.Ctx` cancellation so the Cancel button actually stops
 the statement.
 
+The query editor sends each run as a JSON frame:
+
+```json
+{ "query": "SELECT * FROM users LIMIT 100", "confirm": false }
+```
+
+Read the `query` field in your stream handler. If your backend expects JSON
+instead of a query string, parse that field before forwarding it.
+
 ## Build SQL safely
 
 User input reaches your queries two ways, and they are handled differently:
@@ -382,8 +391,22 @@ plugin.CodeEditorConfig{
 ```
 
 The panel's `Source` loads the current document; Save sends the buffer to
-`SaveRouteID`. Validate and apply server-side in the handler, returning a clear
-`plugin.ErrInvalidInput` on a bad document so the editor can surface it.
+`SaveRouteID`. By default the request body is `{ "content": "..." }`.
+
+If your route expects parsed JSON under a named field, set `SaveBodyKey`:
+
+```go
+plugin.CodeEditorConfig{
+    Language:    "json",
+    SaveRouteID: "search.document.upsert",
+    SaveMethod:  plugin.MethodPut,
+    SaveBodyKey: "document",
+}
+```
+
+With `SaveBodyKey`, the editor parses the buffer as JSON and sends
+`{ "document": ... }`. Validate and apply server-side in the handler, returning a
+clear `plugin.ErrInvalidInput` on a bad document so the editor can surface it.
 
 ## Putting it together
 
