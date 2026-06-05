@@ -292,6 +292,10 @@ Tabs: []plugin.Panel{{
 | `PanelRemoteDesktop` | `RemoteDesktopConfig` | A VNC/RDP screen.                  |
 | `PanelDocument`      | -                     | Rendered document/markdown.        |
 | `PanelDashboard`     | `DashboardConfig`     | A grid of nested panels (`Cells`). |
+| `PanelObjectDetail`  | `ObjectDetailConfig`  | A structured property sheet.       |
+| `PanelTimeline`      | `TimelineConfig`      | Events, tasks, or audit history.   |
+| `PanelTaskProgress`  | `TaskProgressConfig`  | A streamed long-running task.      |
+| `PanelSplit`         | `SplitConfig`         | Resizable child panel composition. |
 | `PanelEnroll`        | -                     | The agent-enrollment screen.       |
 
 `TableConfig` is documented in depth below; the other `*Config` structs follow
@@ -299,6 +303,22 @@ the same idea (they mostly name the route IDs the panel calls and a few display
 options). Their fields are small and self-describing in the SDK types - check the
 `plugin` package godoc and the matching built-in (e.g. `plugins/prometheus` for
 `MetricsConfig`, `plugins/postgresql` for `QueryEditorConfig`) for a live example.
+
+Use the most structured panel that fits the data:
+
+- Use `PanelObjectDetail` for typed fields, copy buttons, badges, redaction, and
+  optional raw JSON. Prefer it over `PanelDocument` for object properties.
+- Use `PanelTimeline` for Kubernetes events, Docker events, audit trails, task
+  history, or database activity feeds returned by a list route.
+- Use `PanelTaskProgress` for cancellable/retryable long-running jobs that stream
+  status/progress frames.
+- Use `PanelSplit` to compose generic panels side by side, such as table +
+  details, editor + preview, or logs + terminal. Do not create plugin-specific
+  layouts for those cases.
+
+The gateway projects the SDK panel-config schema to the browser. Unknown config
+keys and wrong types are rejected by the generic renderer, so keep panel configs
+closed and typed rather than passing ad-hoc maps.
 
 ### DataSource
 

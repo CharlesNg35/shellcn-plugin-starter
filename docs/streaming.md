@@ -149,8 +149,9 @@ Tabs: []plugin.Panel{
 ```
 
 Panel types for streams: `PanelTerminal` (terminal), `PanelLogStream` (logs),
-`PanelRemoteDesktop` (VNC/RDP), `PanelMetrics` (metric frames). A terminal panel
-can opt into extras via `TerminalConfig{Zoom, Search}`.
+`PanelRemoteDesktop` (VNC/RDP), `PanelMetrics` (metric frames), and
+`PanelTaskProgress` (task status/progress frames). A terminal panel can opt into
+extras via `TerminalConfig{Zoom, Search}`.
 
 ### Stream kind semantics and keepalive
 
@@ -162,11 +163,11 @@ recording, and transport policy:
   must keep a browser-to-upstream read loop running for input, resize, mouse, or
   keyboard frames. The gateway may send WebSocket ping keepalives on these
   streams because pong frames are processed by that active reader.
-- `StreamLogs`, `StreamMetrics`, and `StreamFile` are server-to-browser streams.
-  Their handlers often only write events to the browser. Do not declare a log,
-  watch, metrics feed, or long-running query as `StreamTerminal` just because it
-  uses a WebSocket; a keepalive ping could time out if no handler is reading from
-  the browser.
+- `StreamLogs`, `StreamMetrics`, `StreamFile`, and `StreamTask` are
+  server-to-browser streams. Their handlers often only write events to the
+  browser. Do not declare a log, watch, metrics feed, task, or long-running query
+  as `StreamTerminal` just because it uses a WebSocket; a keepalive ping could
+  time out if no handler is reading from the browser.
 
 If you add a custom bidirectional stream shape, keep the same invariant in mind:
 only streams with a continuous client-read loop should use terminal/desktop-style

@@ -211,6 +211,21 @@ unless you really want to reject custom values. For runtime choices, prefer
 `OptionsSource` pointing at a safe read route, so forms show the target's current
 databases, schemas, columns, namespaces, containers, or buckets.
 
+The manifest UX linter enforces the same idea at release time:
+
+- Destructive and privileged actions must set `Confirm` with consequence-focused
+  `ConfirmText`.
+- `OpenDock` is for long-lived interactive panels only: terminal, desktop, logs,
+  metrics, or task progress. Short forms/details should open as dialogs or
+  ordinary views.
+- Stream panel kind and manifest `Stream.Kind` must match. Do not declare logs,
+  metrics, tasks, or one-way watches as terminal streams.
+- Tables should declare useful column types, empty states, and a default sort
+  where it helps scanning. Live data should declare `Watch` or
+  `RefreshIntervalMs`.
+- Actions should have labels, icons, conditions when state-dependent, and
+  `OnSuccess` behavior when the next UI state is predictable.
+
 ## Errors: wrap a sentinel, never return it bare
 
 The gateway maps `plugin.Err*` to HTTP status codes. Always add context with
@@ -340,7 +355,16 @@ func TestManifestValidates(t *testing.T) {
     if err := plugin.Validate(p.Manifest(), p.Routes()); err != nil {
         t.Fatalf("invalid manifest: %v", err)
     }
+    if findings := pluginux.Errors(pluginux.Lint(p.Manifest(), p.Routes())); len(findings) > 0 {
+        t.Fatalf("manifest UX errors: %#v", findings)
+    }
 }
+```
+
+Import it with:
+
+```go
+import "github.com/charlesng35/shellcn/sdk/plugin/pluginux"
 ```
 
 - `plugintest.DirectTransport()` - a real OS dialer for L4 tests.
