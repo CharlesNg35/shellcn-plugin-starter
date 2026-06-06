@@ -226,6 +226,44 @@ The manifest UX linter enforces the same idea at release time:
 - Actions should have labels, icons, conditions when state-dependent, and
   `OnSuccess` behavior when the next UI state is predictable.
 
+## Use the right panel for the job
+
+Do not shortcut the manifest by dumping everything into `PanelDocument` or a
+single raw JSON view. A plugin should expose the target in the way an operator
+expects to inspect and act on that target:
+
+- Use `PanelObjectDetail` for a structured overview/property sheet: identity,
+  status, placement, resource limits, metadata, badges, copyable IDs, and a raw
+  toggle when useful.
+- Use `PanelTable` for collections and child objects, with typed columns,
+  meaningful empty states, default sort, and `Watch` or `RefreshIntervalMs` for
+  live objects.
+- Use `PanelTimeline` for events, tasks, audit trails, Kubernetes events,
+  background jobs, and lifecycle history.
+- Use `PanelMetrics` for live CPU, memory, throughput, latency, queue depth, or
+  capacity signals. If the backend metrics API is absent, degrade gracefully and
+  still show static request/limit/capacity data where available.
+- Use `PanelCodeEditor` for editable text/config/manifests. It already gives the
+  user a local diff before saving.
+- Use `PanelDiff` only when the plugin can produce two meaningful versions
+  server-side, such as planned vs current, dry-run vs current, or backup vs live.
+- Use `PanelTaskProgress` for long-running operations instead of returning a
+  synchronous "started" result with no follow-up.
+- Use terminal/log/desktop stream panels only for real long-lived interactive or
+  streaming channels.
+
+Cover the important features of the domain, not just the minimum route that
+works. A Kubernetes Pod overview should show scheduling, status, requests,
+limits, live memory/CPU when available, logs, shell, YAML, and events. A database
+table should expose rows, columns, indexes, relationships, and SQL. A container
+should expose state, logs, shell, inspect/config, environment, ports, and
+lifecycle actions. This keeps plugins professional and predictable without any
+plugin-specific frontend code.
+
+The rule of thumb: raw JSON/YAML is a fallback and an escape hatch, not the
+primary UX. First choose the panel that matches the user's task, then keep the
+raw view available where it helps diagnostics.
+
 ## Errors: wrap a sentinel, never return it bare
 
 The gateway maps `plugin.Err*` to HTTP status codes. Always add context with
