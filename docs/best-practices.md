@@ -238,6 +238,13 @@ expects to inspect and act on that target:
 - Use `PanelTable` for collections and child objects, with typed columns,
   meaningful empty states, default sort, and `Watch` or `RefreshIntervalMs` for
   live objects.
+- Keep the sidebar tree for navigation, not data. Do not add
+  `TreeGroup.Source` or `TreeNode.ChildrenSource` just to expand every pod,
+  container, task, backup, metric, table row, or message into the sidebar. If the
+  children can grow large or need paging/search/filtering, make the tree node a
+  leaf with `ResourceKind` so it opens a `PanelTable`. Use expandable tree
+  sources only for bounded navigation, such as categories, databases, schemas, or
+  a short list of child collections.
 - Use `PanelTimeline` for events, tasks, audit trails, Kubernetes events,
   background jobs, and lifecycle history.
 - Use `PanelMetrics` for live CPU, memory, throughput, latency, queue depth, or
