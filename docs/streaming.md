@@ -143,15 +143,18 @@ Streams: []plugin.Stream{
     {ID: "shell.session", Kind: plugin.StreamTerminal, RouteID: "shell.session"},
 },
 Tabs: []plugin.Panel{
-    {Key: "shell", Label: "Shell", Type: plugin.PanelTerminal,
-     Source: &plugin.DataSource{RouteID: "shell.session"}},
+    {Key: "shell", Label: "Shell", Type: plugin.PanelTerminalGrid,
+     Source: &plugin.DataSource{RouteID: "shell.session"},
+     Config: plugin.TerminalGridConfig{MaxPanes: 6, Zoom: true, Search: true}},
 },
 ```
 
-Panel types for streams: `PanelTerminal` (terminal), `PanelLogStream` (logs),
-`PanelRemoteDesktop` (VNC/RDP), `PanelMetrics` (metric frames), and
-`PanelTaskProgress` (task status/progress frames). A terminal panel can opt into
-extras via `TerminalConfig{Zoom, Search}`.
+Panel types for streams: `PanelTerminal` (single terminal), `PanelTerminalGrid`
+(user-managed terminal splits), `PanelLogStream` (logs), `PanelRemoteDesktop`
+(VNC/RDP), `PanelMetrics` (metric frames), and `PanelTaskProgress` (task
+status/progress frames). Terminal panels can opt into extras via
+`TerminalConfig{Zoom, Search}` or `TerminalGridConfig{MaxPanes, DefaultPanes,
+Zoom, Search}`.
 
 ### Stream kind semantics and keepalive
 
@@ -172,6 +175,19 @@ recording, and transport policy:
 If you add a custom bidirectional stream shape, keep the same invariant in mind:
 only streams with a continuous client-read loop should use terminal/desktop-style
 transport behavior.
+
+### Split terminal workspaces
+
+`PanelTerminalGrid` is a renderer-owned workspace for SSH-style shells. A plugin
+does not declare one stream per pane; it declares one `StreamTerminal` route, and
+the browser opens a separate channel for each split pane through that same source.
+Keep the handler stateless per stream open so two panes do not accidentally share
+PTY state.
+
+Recording is intentionally conservative. Mandatory terminal recording disables
+split workspaces. Manual recording is hidden once the workspace is split, so the
+gateway never creates misleading per-pane recordings. Use `PanelTerminal` when a
+connection must always expose a recordable single terminal view.
 
 ## Recording
 

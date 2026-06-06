@@ -344,6 +344,12 @@ Declare stream kinds by browser behavior:
 If a future stream shape is bidirectional, only treat it like terminal/desktop
 when the handler continuously reads from the browser for the life of the stream.
 
+For shell protocols, prefer `PanelTerminalGrid` when split panes are part of the
+operator workflow. The manifest still declares a single `StreamTerminal` route;
+the renderer opens one channel per pane. Keep every stream open independent, avoid
+global session state for PTYs, and use `PanelTerminal` instead when mandatory
+recording must remain available for that connection.
+
 ## Test the manifest and the handlers
 
 Every built-in has a unit test that validates the manifest, plus handler tests

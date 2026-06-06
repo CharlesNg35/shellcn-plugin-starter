@@ -229,7 +229,7 @@ built-ins map cleanly onto four shapes:
 
 | Your protocol is...                                                        | Layout              | Typical panels                                                  | Built-ins                                      |
 | -------------------------------------------------------------------------- | ------------------- | --------------------------------------------------------------- | ---------------------------------------------- |
-| **One screen** (a single terminal, file tree, or desktop)                  | `LayoutSingle`      | one `PanelTerminal` / `PanelFileBrowser` / `PanelRemoteDesktop` | sftp, ftp, smb, vnc, rdp, telnet               |
+| **One screen** (a terminal workspace, file tree, or desktop)               | `LayoutSingle`      | one `PanelTerminalGrid` / `PanelFileBrowser` / `PanelRemoteDesktop` | ssh, sftp, ftp, smb, vnc, rdp, telnet          |
 | **A few flat views** (terminal + files, or browse + admin)                 | `LayoutTabs`        | a handful of `Tabs`                                             | ssh, s3, minio, redis                          |
 | **A big hierarchy** (databases→tables, namespaces→pods, topics→partitions) | `LayoutSidebarTree` | `Tree` + `Resources` with `DetailView`s                         | postgresql, mongodb, docker, kubernetes, kafka |
 | **An at-a-glance board** (several charts/tables at once)                   | `LayoutDashboard`   | `Tabs` as dashboard cells                                       | (dashboard-style monitors)                     |
@@ -279,7 +279,8 @@ Tabs: []plugin.Panel{{
 | -------------------- | --------------------- | ---------------------------------- |
 | `PanelTable`         | `TableConfig`         | A data grid (optionally editable). |
 | `PanelForm`          | `FormPanelConfig`     | A submit form.                     |
-| `PanelTerminal`      | `TerminalConfig`      | An xterm terminal (WS route).      |
+| `PanelTerminal`      | `TerminalConfig`      | One xterm terminal (WS route).     |
+| `PanelTerminalGrid`  | `TerminalGridConfig`  | A split terminal workspace.        |
 | `PanelLogStream`     | -                     | A live log tail (WS route).        |
 | `PanelQueryEditor`   | `QueryEditorConfig`   | A SQL/query editor + results.      |
 | `PanelFileBrowser`   | `FileBrowserConfig`   | A file manager.                    |
@@ -312,6 +313,9 @@ Use the most structured panel that fits the data:
   history, or database activity feeds returned by a list route.
 - Use `PanelTaskProgress` for cancellable/retryable long-running jobs that stream
   status/progress frames.
+- Use `PanelTerminalGrid` when users should be able to split a terminal workspace
+  themselves. It still binds to one `StreamTerminal` route; each pane opens its own
+  channel through the same manifest source.
 - Use `PanelSplit` to compose generic panels side by side, such as table +
   details, editor + preview, or logs + terminal. Do not create plugin-specific
   layouts for those cases.
