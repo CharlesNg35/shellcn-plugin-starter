@@ -227,12 +227,12 @@ which you read with `cfg.CredentialSecretFor(...)` (see
 Pick the layout from how your protocol is navigated, not from its category. The
 built-ins map cleanly onto four shapes:
 
-| Your protocol is...                                                        | Layout              | Typical panels                                                  | Built-ins                                      |
-| -------------------------------------------------------------------------- | ------------------- | --------------------------------------------------------------- | ---------------------------------------------- |
+| Your protocol is...                                                        | Layout              | Typical panels                                                      | Built-ins                                      |
+| -------------------------------------------------------------------------- | ------------------- | ------------------------------------------------------------------- | ---------------------------------------------- |
 | **One screen** (a terminal workspace, file tree, or desktop)               | `LayoutSingle`      | one `PanelTerminalGrid` / `PanelFileBrowser` / `PanelRemoteDesktop` | ssh, sftp, ftp, smb, vnc, rdp, telnet          |
-| **A few flat views** (terminal + files, or browse + admin)                 | `LayoutTabs`        | a handful of `Tabs`                                             | ssh, s3, minio, redis                          |
-| **A big hierarchy** (databases→tables, namespaces→pods, topics→partitions) | `LayoutSidebarTree` | `Tree` + `Resources` with `DetailView`s                         | postgresql, mongodb, docker, kubernetes, kafka |
-| **An at-a-glance board** (several charts/tables at once)                   | `LayoutDashboard`   | `Tabs` as dashboard cells                                       | (dashboard-style monitors)                     |
+| **A few flat views** (terminal + files, or browse + admin)                 | `LayoutTabs`        | a handful of `Tabs`                                                 | ssh, s3, minio, redis                          |
+| **A big hierarchy** (databases→tables, namespaces→pods, topics→partitions) | `LayoutSidebarTree` | `Tree` + `Resources` with `DetailView`s                             | postgresql, mongodb, docker, kubernetes, kafka |
+| **An at-a-glance board** (several charts/tables at once)                   | `LayoutDashboard`   | `Tabs` as dashboard cells                                           | (dashboard-style monitors)                     |
 
 Rules of thumb:
 
@@ -453,6 +453,8 @@ Agent: &plugin.AgentProfile{
 When you offer both, hide the direct-only config fields (host, port, socket) under
 the agent transport with a `$transport` condition - see
 [Conditions](#conditions-visiblewhen). Full agent details: [agents.md](agents.md).
+For protocols that discover additional upstream addresses after bootstrap, such
+as Kafka brokers, see the `Forward` guidance in [agents.md](agents.md#fixed-targets-vs-forwarded-targets).
 
 ## Capabilities
 

@@ -69,13 +69,52 @@ condition on `$transport`. See the transport-conditional example in
 
 ### ProxyTarget
 
-| Field                  | Purpose                                                                            |
-| ---------------------- | ---------------------------------------------------------------------------------- |
-| `Mode`                 | One of the four modes above.                                                       |
-| `Address`              | Default target address from the agent's vantage point (empty for host-monitor).    |
-| `Risk`                 | Risk of opening the tunnel (usually `RiskPrivileged`; host-monitor is `RiskSafe`). |
-| `Forward`              | Allow per-stream target addresses instead of only `Address`.                       |
-| `TokenFile` / `CAFile` | Optional credential/CA paths on the agent host.                                    |
+| Field                  | Purpose                                                                               |
+| ---------------------- | ------------------------------------------------------------------------------------- |
+| `Mode`                 | One of the four modes above.                                                          |
+| `Address`              | Default target address from the agent's vantage point (empty for host-monitor).       |
+| `Risk`                 | Risk of opening the tunnel (usually `RiskPrivileged`; host-monitor is `RiskSafe`).    |
+| `Forward`              | Allow each dial to choose a target address instead of pinning all dials to `Address`. |
+| `TokenFile` / `CAFile` | Optional credential/CA paths on the agent host.                                       |
+
+### Fixed targets vs forwarded targets
+
+Leave `Forward` false for the common case: one ShellCN connection maps to one
+target-side endpoint. PostgreSQL, Redis, Prometheus, Docker over a Unix socket,
+and most HTTP APIs should use a fixed `Address`.
+
+```go
+Agent: &plugin.AgentProfile{
+    Proxy: plugin.ProxyTarget{
+        Mode:    plugin.AgentTCP,
+        Address: "127.0.0.1:5432",
+        Risk:    plugin.RiskPrivileged,
+    },
+}
+```
+
+Use `Forward: true` only when the protocol genuinely discovers more upstream
+addresses after the first connection and the client must dial those addresses.
+Kafka is the typical example: the bootstrap broker returns advertised broker
+addresses, and the client then dials `broker-1:9092`, `broker-2:9092`, etc.
+
+```go
+Agent: &plugin.AgentProfile{
+    Proxy: plugin.ProxyTarget{
+        Mode:    plugin.AgentTCP,
+        Risk:    plugin.RiskPrivileged,
+        Forward: true,
+    },
+}
+```
+
+`Forward: true` is broader than a fixed target. It lets the plugin's connection
+reach multiple target-side addresses through the same enrolled agent, so do not
+enable it for convenience or for ordinary single-host APIs. Add tests proving the
+driver dials through `cfg.Net`, and document why forwarding is required.
+When `Forward` is true, leave `Address` empty unless your stream code has a
+well-defined fallback target. User-entered connection fields or protocol metadata
+should supply the actual dial addresses.
 
 ### Branch on the transport when you must
 
