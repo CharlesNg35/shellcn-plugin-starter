@@ -352,19 +352,27 @@ using the fake transports in `sdk/plugintest`:
 ```go
 func TestManifestValidates(t *testing.T) {
     p := New()
-    if err := plugin.Validate(p.Manifest(), p.Routes()); err != nil {
-        t.Fatalf("invalid manifest: %v", err)
-    }
-    if findings := pluginux.Errors(pluginux.Lint(p.Manifest(), p.Routes())); len(findings) > 0 {
-        t.Fatalf("manifest UX errors: %#v", findings)
-    }
+    plugintest.ValidatePlugin(t, p)
 }
 ```
 
 Import it with:
 
 ```go
-import "github.com/charlesng35/shellcn/sdk/plugin/pluginux"
+import "github.com/charlesng35/shellcn/sdk/plugintest"
+```
+
+`ValidatePlugin` checks the core manifest contract, release-blocking UX rules,
+projection generation, and every panel config against the SDK's
+`PanelConfigSchemas`. That catches renderer-breaking mistakes such as unsupported
+nested config keys, stream-kind/panel mismatches, destructive actions without
+confirmation, and runtime-only data leaking into `Panel.Config`.
+
+For tests that need the projected browser contract, use the same helper path:
+
+```go
+proj := plugintest.Projection(t, p)
+plugintest.ValidateProjectionPanelConfigs(t, proj)
 ```
 
 - `plugintest.DirectTransport()` - a real OS dialer for L4 tests.
