@@ -382,6 +382,13 @@ Keep panel config defaults intentional. For graphs, nil/omitted/null
 it to a pointer containing `false` only when the graph is sensitive enough that
 the export menu should be hidden.
 
+Use diff intentionally. `PanelCodeEditor` already gives writable documents a
+generic changed-buffer diff, so do not add a separate diff tab just to compare a
+user's local edits. Use `PanelDiff` for route-backed previews where your plugin
+can return both sides: live config vs dry-run result, current document vs
+proposed replacement, current spec vs rollback target, or generated DDL before
+and after a change. Keep current-state inspection in `PanelObjectDetail`.
+
 When the UX linter rejects a plugin, the failure is shown in the terminal running
 `go test`, for example:
 
@@ -413,6 +420,7 @@ Test the ShellCN panel payload, not only the upstream API payload. For example:
 
 - `PanelQueryEditor` sends `{ "query": "...", "confirm": false }`.
 - `PanelCodeEditor` sends `{ "content": "..." }` unless `SaveBodyKey` is set.
+- `PanelDiff` reads an object with the configured original/modified fields.
 
 If your handler forwards requests to another API, add a test that uses the same
 shape the gateway sends. That catches manifest and route contract mistakes before

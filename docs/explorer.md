@@ -391,7 +391,10 @@ plugin.CodeEditorConfig{
 ```
 
 The panel's `Source` loads the current document; Save sends the buffer to
-`SaveRouteID`. By default the request body is `{ "content": "..." }`.
+`SaveRouteID`. By default the request body is `{ "content": "..." }`. When the
+loaded buffer changes, the generic renderer shows a **Diff** button that opens a
+read-only before/after review of the loaded content and the edited content. You
+do not need plugin-specific UI to get this workflow.
 
 If your route expects parsed JSON under a named field, set `SaveBodyKey`:
 
@@ -407,6 +410,28 @@ plugin.CodeEditorConfig{
 With `SaveBodyKey`, the editor parses the buffer as JSON and sends
 `{ "document": ... }`. Validate and apply server-side in the handler, returning a
 clear `plugin.ErrInvalidInput` on a bad document so the editor can surface it.
+
+Use `PanelDiff` when the plugin computes both sides itself, for example a
+server-side dry-run result or generated DDL preview:
+
+```go
+plugin.Panel{
+    Key:    "preview",
+    Label:  "Preview",
+    Type:   plugin.PanelDiff,
+    Source: &plugin.DataSource{RouteID: "example.change.preview"},
+    Config: plugin.DiffConfig{
+        Language:      "yaml",
+        OriginalField: "current",
+        ModifiedField: "proposed",
+        OriginalLabel: "Current",
+        ModifiedLabel: "Proposed",
+    },
+}
+```
+
+The route should return an object with the configured fields. Use strings for
+text/YAML/SQL, or structured values when JSON pretty-printing is acceptable.
 
 ## Putting it together
 

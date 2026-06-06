@@ -284,7 +284,8 @@ Tabs: []plugin.Panel{{
 | `PanelLogStream`     | -                     | A live log tail (WS route).        |
 | `PanelQueryEditor`   | `QueryEditorConfig`   | A SQL/query editor + results.      |
 | `PanelFileBrowser`   | `FileBrowserConfig`   | A file manager.                    |
-| `PanelCodeEditor`    | `CodeEditorConfig`    | A Monaco editor.                   |
+| `PanelCodeEditor`    | `CodeEditorConfig`    | A CodeMirror editor.               |
+| `PanelDiff`          | `DiffConfig`          | A read-only before/after diff.     |
 | `PanelMetrics`       | `MetricsConfig`       | KPI cards, gauges, time-series.    |
 | `PanelGraph`         | `GraphConfig`         | A node/edge graph.                 |
 | `PanelTrace`         | `TraceConfig`         | A distributed-trace view.          |
@@ -317,6 +318,10 @@ Use the most structured panel that fits the data:
   views. Graph image export is enabled by default when `GraphConfig.Exportable`
   is nil/omitted/null; set it to a `*bool` containing `false` only for sensitive
   graphs that should not expose the PNG/JPEG/SVG export menu.
+- Use `PanelDiff` only when the route can return both sides of a comparison,
+  such as current YAML vs dry-run output, current document vs proposed
+  replacement, or generated SQL before/after DDL. Do not use it for ordinary
+  inspect tabs; `PanelObjectDetail` is better for current object state.
 - Use `PanelTerminalGrid` when users should be able to split a terminal workspace
   themselves. It still binds to one `StreamTerminal` route; each pane opens its own
   channel through the same manifest source.
