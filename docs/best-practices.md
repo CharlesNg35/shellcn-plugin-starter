@@ -352,13 +352,15 @@ recording must remain available for that connection.
 
 ## Test the manifest and the handlers
 
-Every built-in has a unit test that validates the manifest, plus handler tests
-using the fake transports in `sdk/plugintest`:
+Every plugin should keep a unit test that validates the manifest. The starter
+ships this test by default; keep it when you rename the plugin. It is the first
+line of defense for CI and local development because `go test` prints exact
+manifest and UX contract failures before a bad plugin can be loaded by the
+gateway.
 
 ```go
 func TestManifestValidates(t *testing.T) {
-    p := New()
-    plugintest.ValidatePlugin(t, p)
+    plugintest.ValidatePlugin(t, Starter{})
 }
 ```
 
@@ -372,7 +374,21 @@ import "github.com/charlesng35/shellcn/sdk/plugintest"
 projection generation, and every panel config against the SDK's
 `PanelConfigSchemas`. That catches renderer-breaking mistakes such as unsupported
 nested config keys, stream-kind/panel mismatches, destructive actions without
-confirmation, and runtime-only data leaking into `Panel.Config`.
+confirmation, `OpenURL` actions with required body fields, and runtime-only data
+leaking into `Panel.Config`.
+
+When the UX linter rejects a plugin, the failure is shown in the terminal running
+`go test`, for example:
+
+```text
+action clickhouse.user.grant: privileged action must require confirmation
+```
+
+The same release-blocking errors are also rejected by the gateway at external
+plugin registration time, so operators see a server log instead of a broken
+browser workflow.
+
+Add handler tests using the fake transports in `sdk/plugintest`.
 
 For tests that need the projected browser contract, use the same helper path:
 
