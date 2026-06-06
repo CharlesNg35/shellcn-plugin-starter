@@ -14,7 +14,7 @@ go get github.com/charlesng35/shellcn/sdk@latest
 go build -o starter .
 ```
 
-`go.mod` already pins a version (`github.com/charlesng35/shellcn/sdk v0.1.4`);
+`go.mod` already pins a version (`github.com/charlesng35/shellcn/sdk v0.1.5`);
 bump it with `go get ...@<newer>` when a new SDK is released.
 
 ## Prefer pure Go
