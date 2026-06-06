@@ -313,6 +313,10 @@ Use the most structured panel that fits the data:
   history, or database activity feeds returned by a list route.
 - Use `PanelTaskProgress` for cancellable/retryable long-running jobs that stream
   status/progress frames.
+- Use `PanelGraph` for dependency maps, topology, ER diagrams, and relationship
+  views. Graph image export is enabled by default when `GraphConfig.Exportable`
+  is nil/omitted/null; set it to a `*bool` containing `false` only for sensitive
+  graphs that should not expose the PNG/JPEG/SVG export menu.
 - Use `PanelTerminalGrid` when users should be able to split a terminal workspace
   themselves. It still binds to one `StreamTerminal` route; each pane opens its own
   channel through the same manifest source.

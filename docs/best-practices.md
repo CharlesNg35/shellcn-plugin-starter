@@ -377,6 +377,11 @@ nested config keys, stream-kind/panel mismatches, destructive actions without
 confirmation, `OpenURL` actions with required body fields, and runtime-only data
 leaking into `Panel.Config`.
 
+Keep panel config defaults intentional. For graphs, nil/omitted/null
+`GraphConfig.Exportable` means client-side PNG/JPEG/SVG export is available; set
+it to a pointer containing `false` only when the graph is sensitive enough that
+the export menu should be hidden.
+
 When the UX linter rejects a plugin, the failure is shown in the terminal running
 `go test`, for example:
 
