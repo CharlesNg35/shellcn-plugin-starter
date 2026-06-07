@@ -168,8 +168,9 @@ rows, err := rc.Storage.List(rc.Ctx, plugin.UserStorage("snippets"))
   operations fail with a conflict if the same key exists in multiple
   connections.
 
-Core resolves the security context. Do not duplicate plugin ID, owner ID, or
-connection ID in your stored JSON payload.
+Core resolves the security context and write timestamps. Do not duplicate plugin
+ID, owner ID, connection ID, `CreatedAt`, or `UpdatedAt` in your stored JSON
+payload.
 
 Store opaque `Value` bytes with a `ContentType`, plus lightweight `Metadata` for
 labels or local sorting. Keep secrets out of plugin storage - use credentials
