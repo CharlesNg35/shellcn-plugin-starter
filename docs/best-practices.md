@@ -136,7 +136,7 @@ saved queries, saved request templates, or per-plugin preferences. Do not use it
 as a cache for live infrastructure state; list/watch routes should read the
 target system directly.
 
-Create records in a namespace. Core stores the current plugin, authenticated
+Create records in a collection. Core stores the current plugin, authenticated
 user, and current connection automatically:
 
 ```go
@@ -153,17 +153,17 @@ field:
 rows, err := rc.Storage.List(rc.Ctx, plugin.UserStorage("snippets"))
 ```
 
-- `plugin.StorageScope{Namespace: "snippets"}` or
+- `plugin.StorageScope{Collection: "snippets"}` or
   `plugin.ConnectionStorage("snippets")` filters to the current connection and
   current user.
 - `plugin.UserStorage("snippets")` filters to the current user across this
   plugin's connections.
-- `Namespace` separates logical collections inside the plugin. Use a stable,
+- `Collection` separates logical record groups inside the plugin. Use a stable,
   lowercase plural name (`snippets`, `saved_queries`, `profiles`).
-- `Key` is the record identifier inside that namespace. If you need hierarchy,
+- `Key` is the record identifier inside that collection. If you need hierarchy,
   encode it in your own value or key convention; the storage API intentionally
   does not expose a prefix filter.
-- For `plugin.UserStorage(...)`, make keys unique for that user/plugin/namespace
+- For `plugin.UserStorage(...)`, make keys unique for that user/plugin/collection
   across connections. Use generated IDs for user-owned records; keyed get/delete
   operations fail with a conflict if the same key exists in multiple
   connections.
