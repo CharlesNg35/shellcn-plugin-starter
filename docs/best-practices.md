@@ -129,6 +129,48 @@ if secret := cfg.CredentialSecretFor(plugin.CredentialField); secret != "" {
 }
 ```
 
+## Plugin storage: keep scope simple
+
+Use `rc.Storage` only for small plugin-owned user objects, such as snippets,
+saved queries, saved request templates, or per-plugin preferences. Do not use it
+as a cache for live infrastructure state; list/watch routes should read the
+target system directly.
+
+Create records in a namespace. Core stores the current plugin, authenticated
+user, and current connection automatically:
+
+```go
+_, err := rc.Storage.Put(rc.Ctx, "snippets", plugin.StorageItem{
+    Key:   id,
+    Value: payload,
+})
+```
+
+Read, list, and delete with a scope. The scope is a filter, not a persisted
+field:
+
+```go
+rows, err := rc.Storage.List(rc.Ctx, plugin.UserStorage("snippets"))
+```
+
+- `plugin.StorageScope{Namespace: "snippets"}` or
+  `plugin.ConnectionStorage("snippets")` filters to the current connection and
+  current user.
+- `plugin.UserStorage("snippets")` filters to the current user across this
+  plugin's connections.
+- `Namespace` separates logical collections inside the plugin. Use a stable,
+  lowercase plural name (`snippets`, `saved_queries`, `profiles`).
+- `Key` is the record identifier inside that namespace. If you need hierarchy,
+  encode it in your own value or key convention; the storage API intentionally
+  does not expose a prefix filter.
+
+Core resolves the security context. Do not duplicate plugin ID, owner ID, or
+connection ID in your stored JSON payload.
+
+Store opaque `Value` bytes with a `ContentType`, plus lightweight `Metadata` for
+labels or local sorting. Keep secrets out of plugin storage - use credentials
+for secrets.
+
 ## Reading config safely
 
 `cfg.String(key)` returns `""` if absent/non-string; `cfg.Int(key)` returns
