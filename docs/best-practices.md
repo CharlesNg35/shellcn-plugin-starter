@@ -163,6 +163,10 @@ rows, err := rc.Storage.List(rc.Ctx, plugin.UserStorage("snippets"))
 - `Key` is the record identifier inside that namespace. If you need hierarchy,
   encode it in your own value or key convention; the storage API intentionally
   does not expose a prefix filter.
+- For `plugin.UserStorage(...)`, make keys unique for that user/plugin/namespace
+  across connections. Use generated IDs for user-owned records; keyed get/delete
+  operations fail with a conflict if the same key exists in multiple
+  connections.
 
 Core resolves the security context. Do not duplicate plugin ID, owner ID, or
 connection ID in your stored JSON payload.
