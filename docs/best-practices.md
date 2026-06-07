@@ -285,6 +285,33 @@ expects to inspect and act on that target:
 - Use `PanelTable` for collections and child objects, with typed columns,
   meaningful empty states, default sort, and `Watch` or `RefreshIntervalMs` for
   live objects.
+- For table row actions, return a `ref` object on each row whenever an action
+  needs selected-row identity. `${resource.uid}`, `${resource.name}`,
+  `${resource.namespace}`, and `${resource.scope}` resolve from this reference,
+  not from arbitrary top-level row fields:
+
+  ```go
+  type Row struct {
+      Ref   plugin.ResourceRef `json:"ref"`
+      Name  string             `json:"name"`
+      State string             `json:"state"`
+  }
+
+  row := Row{
+      Ref: plugin.ResourceRef{
+          Kind: "container",
+          Name: "web",
+          UID:  "7f4c...",
+      },
+      Name:  "web",
+      State: "running",
+  }
+  ```
+
+  Then row actions can use stable params such as
+  `map[string]string{"id": "${resource.uid}"}`. Do not rely on a loose
+  top-level `uid` column for actions; keep visible columns domain-specific and
+  put action identity in `ref`.
 - Keep the sidebar tree for navigation, not data. Do not add
   `TreeGroup.Source` or `TreeNode.ChildrenSource` just to expand every pod,
   container, task, backup, metric, table row, or message into the sidebar. If the
