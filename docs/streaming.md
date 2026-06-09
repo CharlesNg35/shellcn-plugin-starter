@@ -272,6 +272,16 @@ Use `WheelMode` instead of a boolean:
 - `CanvasWheelNone`: disable wheel input for interactive surfaces that do not
   need it.
 
+Common canvas configuration recipes:
+
+| Surface type                                                              | Recommended config                                                                                                                                                                                                | Why                                                                                                 |
+| ------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------- |
+| Responsive dashboard, live chart, status board                            | `ScaleMode: plugin.CanvasScaleResize`, `ResizeEvents: true`, `WheelMode: plugin.CanvasWheelNone`                                                                                                                  | The plugin can redraw to the actual viewport; no wheel input is needed.                             |
+| Game, simulator, drawing tool with keyboard/pointer control               | `ScaleMode: plugin.CanvasScaleResize`, `Interactive: true`, `Keyboard: true`, `Pointer: true`, `WheelMode: plugin.CanvasWheelCapture` only if wheel is part of gameplay/tooling                                   | The app owns the interaction loop and should adapt to the available panel.                          |
+| Fixed artboard, preview, report page, compact visual debugger             | `Width`/`Height`, `ScaleMode: plugin.CanvasScaleFit`, optional `MaxScale: 1`, `Pointer: true` when interactive                                                                                                    | The coordinate system stays stable while the browser scales the view into the panel.                |
+| Large topology, map, timeline, whiteboard, dependency graph, canvas table | `Width`/`Height`, `ScaleMode: plugin.CanvasScaleScroll`, `WheelMode: plugin.CanvasWheelModified` when zoom/pan shortcuts are needed                                                                               | The surface is naturally larger than the viewport, so normal scrolling must remain available.       |
+| Form-like controls rendered in canvas                                     | Prefer `PanelForm`; if canvas is required, use `ScaleMode: plugin.CanvasScaleFit`, `Interactive: true`, `Keyboard: true`, `Pointer: true`, `WheelMode: plugin.CanvasWheelNone`, plus `FocusRegion` and `Announce` | Generic form panels are more accessible; custom canvas controls need explicit accessibility events. |
+
 If a canvas stream is interactive, the handler must continuously read from the
 client stream while writing frames.
 

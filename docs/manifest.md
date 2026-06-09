@@ -354,6 +354,10 @@ Use the most structured panel that fits the data:
   `CanvasWheelCapture` always sends wheel events to the plugin,
   `CanvasWheelModified` sends wheel events only with Alt/Ctrl/Meta held so
   ordinary scrolling still works, and `CanvasWheelNone` disables wheel input.
+  Use `CanvasWheelNone` for passive charts and dashboards,
+  `CanvasWheelModified` for optional zoom/pan in editors and maps, and
+  `CanvasWheelCapture` only when wheel gestures are core to the canvas
+  experience.
 - Canvas frames should use the typed `sdk/plugin/canvas` helpers for richer
   primitives: partial clears, per-corner `Radii`, path fill rules, enhanced
   text boxes, explicit fill/stroke text, cursor changes, focus regions,

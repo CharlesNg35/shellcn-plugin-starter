@@ -364,6 +364,13 @@ expects to inspect and act on that target:
   best choice for zoomable maps and editors because ordinary mouse-wheel
   scrolling still works; reserve `CanvasWheelCapture` for surfaces where wheel
   gestures must always belong to the canvas.
+- Pick canvas sizing by app shape, not by plugin name. Responsive dashboards and
+  games usually use `CanvasScaleResize`; fixed previews and report artboards use
+  `CanvasScaleFit`; large worlds such as maps, timelines, whiteboards,
+  dependency graphs, and spreadsheet-like canvases use `CanvasScaleScroll`.
+  Wheel mode follows the same rule: `CanvasWheelNone` for no wheel behavior,
+  `CanvasWheelModified` for optional zoom/pan, and `CanvasWheelCapture` only when
+  wheel gestures are core to the canvas.
 
 Cover the important features of the domain, not just the minimum route that
 works. A Kubernetes Pod overview should show scheduling, status, requests,
