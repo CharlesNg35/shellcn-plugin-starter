@@ -323,6 +323,17 @@ streams, and undeclared assets. Declare `Capabilities` only for browser features
 the app actually needs, such as keyboard, pointer, fullscreen, pointer lock, or
 gamepad.
 
+The sandbox intentionally omits `allow-same-origin`. The app runs with an opaque
+origin and communicates with the host only through the declared `postMessage`
+bridge. Do not design a WASM app that needs cookies, localStorage, IndexedDB, or
+direct access to the parent DOM.
+
+Leave `Width` and `Height` empty for a normal full-panel app. Use
+`ScaleMode: plugin.WasmScaleScroll` when the app has naturally taller content
+and should scroll inside the sandbox. Declare `Width` and `Height` together only
+when the WASM app has a fixed logical viewport that should be fitted or scrolled
+as a surface.
+
 ### Split terminal workspaces
 
 `PanelTerminalGrid` is a renderer-owned workspace for SSH-style shells. A plugin

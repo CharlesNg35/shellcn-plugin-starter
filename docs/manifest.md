@@ -370,9 +370,14 @@ Use the most structured panel that fits the data:
   protocol. The plugin still does not ship arbitrary ShellCN frontend code. It
   declares `WasmConfig{Entry, Assets, Boot, Bridge}`; every asset is loaded
   through a read route, every route/stream bridge is allow-listed in the
-  manifest, and the gateway runs the app in a sandboxed iframe. Do not use WASM
-  for tables, forms, settings, CRUD, object details, logs, terminals, or
-  ordinary charts that generic panels already handle.
+  manifest, and the gateway runs the app in a sandboxed iframe without
+  `allow-same-origin`. Do not use WASM for tables, forms, settings, CRUD, object
+  details, logs, terminals, or ordinary charts that generic panels already
+  handle.
+- Leave `Width` and `Height` empty for a normal full-panel WASM app. Use
+  `WasmScaleScroll` for naturally taller content. Declare `Width` and `Height`
+  together only for a fixed logical viewport that must be fitted or scrolled as
+  a surface.
 - For Go WASM, set `Runtime: plugin.WasmRuntimeGo`, declare `app.wasm` as the
   `Entry`, and include `wasm_exec.js` in `Boot.Scripts` and `Assets`. The parent
   renderer fetches the bytes through authenticated plugin routes and posts them
