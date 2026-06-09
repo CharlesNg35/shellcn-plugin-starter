@@ -151,8 +151,9 @@ Tabs: []plugin.Panel{
 
 Panel types for streams: `PanelTerminal` (single terminal), `PanelTerminalGrid`
 (user-managed terminal splits), `PanelLogStream` (logs), `PanelRemoteDesktop`
-(VNC/RDP), `PanelMetrics` (metric frames), and `PanelTaskProgress` (task
-status/progress frames). Terminal panels can opt into extras via
+(VNC/RDP), `PanelMetrics` (metric frames), `PanelTaskProgress` (task
+status/progress frames), and `PanelCanvas` (plugin-driven drawing with optional
+pointer/keyboard/wheel input). Terminal panels can opt into extras via
 `TerminalConfig{Zoom, Search}` or `TerminalGridConfig{MaxPanes, DefaultPanes,
 Zoom, Search}`.
 
@@ -162,10 +163,11 @@ Declare the stream `Kind` by how the browser and handler actually behave, not by
 the upstream protocol name. The gateway uses the generic kind for rendering,
 recording, and transport policy:
 
-- `StreamTerminal` and `StreamDesktop` are interactive streams. Their handlers
-  must keep a browser-to-upstream read loop running for input, resize, mouse, or
-  keyboard frames. The gateway may send WebSocket ping keepalives on these
-  streams because pong frames are processed by that active reader.
+- `StreamTerminal`, `StreamDesktop`, and `StreamCanvas` are interactive streams.
+  Their handlers must keep a browser-to-upstream read loop running for input,
+  resize, mouse, pointer, wheel, or keyboard frames. The gateway may send
+  WebSocket ping keepalives on these streams because pong frames are processed by
+  that active reader.
 - `StreamLogs`, `StreamMetrics`, `StreamFile`, and `StreamTask` are
   server-to-browser streams. Their handlers often only write events to the
   browser. Do not declare a log, watch, metrics feed, task, or long-running query
@@ -175,6 +177,81 @@ recording, and transport policy:
 If you add a custom bidirectional stream shape, keep the same invariant in mind:
 only streams with a continuous client-read loop should use terminal/desktop-style
 transport behavior.
+
+### Canvas streams
+
+`PanelCanvas` is a controlled draw/input protocol, not plugin-owned frontend UI.
+Use the typed SDK structs in `github.com/charlesng35/shellcn/sdk/plugin/canvas`
+instead of ad-hoc `map[string]any` payloads:
+
+```go
+import "github.com/charlesng35/shellcn/sdk/plugin/canvas"
+
+func canvasStream(rc *plugin.RequestContext, client plugin.ClientStream) error {
+    if err := canvas.WriteFrame(client, canvas.Frame{
+        Commands: []canvas.Command{
+            canvas.Clear{Color: "#020617"},
+            canvas.Rect{
+                Paint: canvas.Paint{Fill: "#2563eb"},
+                X: 24, Y: 32, Width: 160, Height: 44, Radius: 8,
+            },
+            canvas.Text{
+                Paint: canvas.Paint{Fill: "#ffffff", Font: "600 16px Inter, sans-serif"},
+                X: 48, Y: 59, Text: "Click me",
+            },
+        },
+        Regions: []canvas.Region{{ID: "primary", X: 24, Y: 32, Width: 160, Height: 44, Cursor: "pointer"}},
+    }); err != nil {
+        return err
+    }
+
+    for {
+        ev, err := canvas.DecodeEvent(client)
+        if err != nil {
+            return err
+        }
+        if pointer, ok := ev.(*canvas.PointerEvent); ok && pointer.RegionID == "primary" {
+            _ = canvas.WriteFrame(client, canvas.Frame{
+                Commands: []canvas.Command{
+                    canvas.Clear{Color: "#052e16"},
+                    canvas.Text{X: 24, Y: 40, Text: "Clicked"},
+                },
+            })
+        }
+    }
+}
+```
+
+On the wire these structs become JSON frames such as `{ "type": "clear" }`,
+`{ "type": "rect" }`, or `{ "commands": [...] }`. The browser sends typed JSON
+events back, including `ready`, `resize`, `pointer`, `wheel`, and `key`. Plugins
+can draw custom controls and handle hit testing themselves, or declare rectangular
+`regions` so returned pointer events include a `regionId`. Use
+`CanvasRawCommand` only as an explicit escape hatch for experimental or future
+canvas commands that the current SDK does not model yet.
+
+Use `CanvasConfig{Interactive, Pointer, Keyboard, WheelMode, ResizeEvents}` to
+opt into input channels. Prefer responsive canvases that fit the available panel
+when the visual can adapt to the reported `ready`/`resize` dimensions. For dense
+maps or whiteboard-like surfaces, add
+`CanvasConfig{Width, Height, Scrollable: true}` so resize/ready events report the
+full drawing surface and the panel scrolls instead of clipping the model to the
+viewport.
+
+Use `WheelMode` instead of a boolean:
+
+- `CanvasWheelAuto`: default behavior. Wheel input is captured for
+  non-scrollable interactive canvases and left to the browser for scrollable
+  canvases.
+- `CanvasWheelCapture`: always send wheel events to the plugin for intentional
+  zoom/pan surfaces.
+- `CanvasWheelModified`: send wheel events only when Alt, Ctrl, or Meta is held;
+  ordinary mouse-wheel scrolling keeps working.
+- `CanvasWheelNone`: disable wheel input for interactive surfaces that do not
+  need it.
+
+If a canvas stream is interactive, the handler must continuously read from the
+client stream while writing frames.
 
 ### Split terminal workspaces
 

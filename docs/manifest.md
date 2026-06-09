@@ -298,6 +298,7 @@ Tabs: []plugin.Panel{{
 | `PanelTimeline`      | `TimelineConfig`      | Events, tasks, or audit history.   |
 | `PanelTaskProgress`  | `TaskProgressConfig`  | A streamed long-running task.      |
 | `PanelSplit`         | `SplitConfig`         | Resizable child panel composition. |
+| `PanelCanvas`        | `CanvasConfig`        | Plugin-driven canvas draw/input.   |
 | `PanelEnroll`        | -                     | The agent-enrollment screen.       |
 
 `TableConfig` is documented in depth below; the other `*Config` structs follow
@@ -328,6 +329,26 @@ Use the most structured panel that fits the data:
 - Use `PanelSplit` to compose generic panels side by side, such as table +
   details, editor + preview, or logs + terminal. Do not create plugin-specific
   layouts for those cases.
+- Use `PanelCanvas` for custom visual or game-like tools that genuinely need a
+  plugin-controlled drawing surface: topology maps with custom interaction,
+  simulators, whiteboard-like tools, visual debuggers, or games. The plugin sends
+  typed SDK canvas frames from
+  `github.com/charlesng35/shellcn/sdk/plugin/canvas` and receives typed
+  pointer/keyboard/wheel/resize events; it never ships JavaScript or DOM. Do not
+  use canvas for ordinary tables, forms, settings, confirmations, or object
+  details because the generic panels are more accessible, theme-consistent,
+  searchable, and easier to validate.
+- Prefer responsive canvas surfaces that fit the available panel when the visual
+  can adapt to the reported `ready`/`resize` dimensions. For dense topology maps,
+  whiteboards, timelines, or diagrams that need a larger stable coordinate
+  system, set `CanvasConfig{Width, Height, Scrollable: true}` so the browser
+  scrolls the panel instead of forcing the plugin to compress dense content into
+  the visible viewport.
+- Use `CanvasConfig.WheelMode` to control mouse-wheel behavior:
+  `CanvasWheelAuto` captures wheel only for non-scrollable interactive canvases,
+  `CanvasWheelCapture` always sends wheel events to the plugin,
+  `CanvasWheelModified` sends wheel events only with Alt/Ctrl/Meta held so
+  ordinary scrolling still works, and `CanvasWheelNone` disables wheel input.
 
 The gateway projects the SDK panel-config schema to the browser. Unknown config
 keys and wrong types are rejected by the generic renderer, so keep panel configs

@@ -332,6 +332,27 @@ expects to inspect and act on that target:
   synchronous "started" result with no follow-up.
 - Use terminal/log/desktop stream panels only for real long-lived interactive or
   streaming channels.
+- Use `PanelCanvas` only for custom visual or interactive surfaces that cannot
+  be represented by the standard panels. It is appropriate for games, topology
+  canvases, protocol visualizers, custom graph editors, or whiteboard-like
+  tools. Use the typed canvas SDK package
+  (`github.com/charlesng35/shellcn/sdk/plugin/canvas`) and structs such as
+  `canvas.Frame`, `canvas.Rect`, and `canvas.PointerEvent` instead of hand-built
+  `map[string]any` draw or input payloads. The browser wire is JSON, but plugin
+  code should stay compiler-checked. It is not a shortcut around `PanelTable`,
+  `PanelForm`, `PanelObjectDetail`, `PanelTimeline`, or `PanelTaskProgress`;
+  those panels remain the professional default for operations UI because they
+  preserve accessibility, keyboard behavior, validation, export, theming, and
+  generic renderer consistency.
+- Prefer responsive Canvas surfaces that fit the available panel. For dense
+  Canvas surfaces that need a larger stable coordinate system, declare `Width`,
+  `Height`, and `Scrollable: true` instead of shrinking all nodes into the
+  visible viewport. This keeps labels, hit regions, and pointer coordinates
+  stable while giving the user normal panel scrolling.
+- Use `CanvasConfig.WheelMode` deliberately. `CanvasWheelModified` is usually the
+  best choice for zoomable maps and editors because ordinary mouse-wheel
+  scrolling still works; reserve `CanvasWheelCapture` for surfaces where wheel
+  gestures must always belong to the canvas.
 
 Cover the important features of the domain, not just the minimum route that
 works. A Kubernetes Pod overview should show scheduling, status, requests,
