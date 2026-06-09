@@ -383,7 +383,9 @@ expects to inspect and act on that target:
   callable route or stream in `WasmConfig.Bridge`. The app receives
   `window.shellcn.route`, `window.shellcn.stream`, and `window.shellcn.asset`
   inside a sandboxed iframe; undeclared access is rejected by the renderer. Do
-  not use WASM as a shortcut around `PanelTable`, `PanelForm`,
+  read `window.shellcn.theme` and subscribe with `window.shellcn.onTheme(fn)` so
+  custom rendering respects light and dark mode. Do not use WASM as a shortcut
+  around `PanelTable`, `PanelForm`,
   `PanelObjectDetail`, `PanelTimeline`, `PanelGraph`, or `PanelCanvas`.
 
 Cover the important features of the domain, not just the minimum route that

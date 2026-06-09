@@ -323,6 +323,12 @@ streams, and undeclared assets. Declare `Capabilities` only for browser features
 the app actually needs, such as keyboard, pointer, fullscreen, pointer lock, or
 gamepad.
 
+The sandbox also receives the ShellCN theme through `window.shellcn.theme`
+(`"light"` or `"dark"`). For live changes, call
+`window.shellcn.onTheme((theme) => { ... })`; the parent posts theme updates
+through the same bridge, so the WASM app does not need same-origin access or
+parent DOM reads.
+
 The sandbox intentionally omits `allow-same-origin`. The app runs with an opaque
 origin and communicates with the host only through the declared `postMessage`
 bridge. Do not design a WASM app that needs cookies, localStorage, IndexedDB, or

@@ -383,6 +383,8 @@ Use the most structured panel that fits the data:
   renderer fetches the bytes through authenticated plugin routes and posts them
   into the sandbox; the WASM app uses `window.shellcn.route`,
   `window.shellcn.stream`, and `window.shellcn.asset` for declared bridge access.
+  Read `window.shellcn.theme` and subscribe with `window.shellcn.onTheme(fn)` so
+  custom DOM/canvas/WebGL rendering follows ShellCN light and dark mode.
 
 The gateway projects the SDK panel-config schema to the browser. Unknown config
 keys and wrong types are rejected by the generic renderer, so keep panel configs
