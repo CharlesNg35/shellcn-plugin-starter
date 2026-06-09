@@ -157,6 +157,13 @@ pointer/keyboard/wheel input). Terminal panels can opt into extras via
 `TerminalConfig{Zoom, Search}` or `TerminalGridConfig{MaxPanes, DefaultPanes,
 Zoom, Search}`.
 
+`PanelWasm` is not itself a stream panel. It is a sandboxed browser-side WASM
+program that may open only the routes and streams declared in
+`WasmConfig.Bridge`. Use it when the UI must run inside the browser, such as a
+portable simulation, game, or WASM-powered visualizer. Keep ordinary long-lived
+terminal/log/query/metrics flows on the native stream panels, and keep custom
+server-driven drawing on `PanelCanvas`.
+
 ### Stream kind semantics and keepalive
 
 Declare the stream `Kind` by how the browser and handler actually behave, not by
@@ -284,6 +291,37 @@ Common canvas configuration recipes:
 
 If a canvas stream is interactive, the handler must continuously read from the
 client stream while writing frames.
+
+### WebAssembly panels
+
+`PanelWasm` runs a declared WASM entrypoint in a core-owned sandboxed iframe. A
+plugin declares assets and bridge permissions; it does not inject raw HTML or
+JavaScript into the ShellCN app.
+
+```go
+plugin.WasmConfig{
+    Entry:   "app.wasm",
+    Runtime: plugin.WasmRuntimeGo,
+    Boot:   plugin.WasmBoot{Scripts: []string{"wasm_exec.js"}},
+    Assets: []plugin.WasmAsset{
+        {Path: "wasm_exec.js", MIME: "text/javascript",
+            Source: plugin.DataSource{RouteID: "demo.asset", Params: map[string]string{"path": "wasm_exec.js"}}},
+        {Path: "app.wasm", MIME: "application/wasm",
+            Source: plugin.DataSource{RouteID: "demo.asset", Params: map[string]string{"path": "app.wasm"}}},
+    },
+    Bridge: plugin.WasmBridge{
+        Routes:  []plugin.WasmBridgeRoute{{RouteID: "demo.state.get", Method: plugin.MethodGet}},
+        Streams: []plugin.WasmBridgeStream{{RouteID: "demo.events"}},
+    },
+}
+```
+
+Inside the sandbox, the app calls `window.shellcn.route(routeId, body, options)`,
+`window.shellcn.stream(routeId, params)`, and `window.shellcn.asset(path)`.
+The renderer rejects calls to undeclared routes, wrong methods, undeclared
+streams, and undeclared assets. Declare `Capabilities` only for browser features
+the app actually needs, such as keyboard, pointer, fullscreen, pointer lock, or
+gamepad.
 
 ### Split terminal workspaces
 

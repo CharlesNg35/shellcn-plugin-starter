@@ -1,6 +1,6 @@
 # Routes
 
-A `Route` is one endpoint. It carries the metadata the gateway enforces *before*
+A `Route` is one endpoint. It carries the metadata the gateway enforces _before_
 your handler runs, and a handler that is pure business logic.
 
 ```go
@@ -13,18 +13,25 @@ your handler runs, and a handler that is pure business logic.
 
 ## Fields
 
-| Field        | Purpose                                                                 |
-| ------------ | ----------------------------------------------------------------------- |
-| `ID`         | Stable handle referenced by panels/actions/manifest.                    |
-| `Method`     | `MethodGet` / `Post` / `Put` / `Patch` / `Delete`, or `MethodWS`.       |
-| `Path`       | Route path; `{name}` placeholders arrive via `rc.Param("name")`.        |
-| `Permission` | RBAC permission string the gateway checks.                              |
-| `Risk`       | `RiskSafe` / `RiskWrite` / `RiskDestructive` / `RiskPrivileged`.        |
-| `AuditEvent` | Name recorded in the audit log for this call.                           |
-| `Input`      | Optional `*Schema`; validated by the gateway before the handler runs.   |
-| `Timeout`    | Optional per-request timeout.                                           |
-| `Handle`     | The handler (`func(*RequestContext) (any, error)`).                     |
-| `Stream`     | For `MethodWS` routes only - see [streaming.md](streaming.md).          |
+| Field        | Purpose                                                               |
+| ------------ | --------------------------------------------------------------------- |
+| `ID`         | Stable handle referenced by panels/actions/manifest.                  |
+| `Method`     | `MethodGet` / `Post` / `Put` / `Patch` / `Delete`, or `MethodWS`.     |
+| `Path`       | Route path; `{name}` placeholders arrive via `rc.Param("name")`.      |
+| `Permission` | RBAC permission string the gateway checks.                            |
+| `Risk`       | `RiskSafe` / `RiskWrite` / `RiskDestructive` / `RiskPrivileged`.      |
+| `AuditEvent` | Name recorded in the audit log for this call.                         |
+| `Input`      | Optional `*Schema`; validated by the gateway before the handler runs. |
+| `Timeout`    | Optional per-request timeout.                                         |
+| `Handle`     | The handler (`func(*RequestContext) (any, error)`).                   |
+| `Stream`     | For `MethodWS` routes only - see [streaming.md](streaming.md).        |
+
+Route IDs are scoped by plugin name. If your manifest `Name` is `starter`, every
+route ID must begin with `starter.`. The gateway validates this during
+registration and resolves route calls by `(connection protocol, route ID)`, not
+by a global route table. A plugin cannot call another plugin's route by
+declaring `other.route`; that route is not in its own route set, and declaring a
+route with another plugin's prefix is rejected.
 
 ### Risk levels
 
@@ -121,15 +128,15 @@ func setSchema() *plugin.Schema {
 Return one of the SDK sentinels (wrap with `fmt.Errorf("%w: ...", ...)` to add
 context); the gateway maps them to HTTP status codes:
 
-| Sentinel                  | Meaning                          |
-| ------------------------- | -------------------------------- |
-| `plugin.ErrInvalidInput`  | Bad request (400).               |
-| `plugin.ErrNotFound`      | Missing resource (404).          |
-| `plugin.ErrUnauthorized`  | Not authenticated (401).         |
-| `plugin.ErrForbidden`     | Not allowed (403).               |
-| `plugin.ErrConflict`      | Conflict (409).                  |
-| `plugin.ErrUnavailable`   | Upstream unreachable (503).      |
-| `plugin.ErrNotSupported`  | Capability not implemented.      |
+| Sentinel                 | Meaning                     |
+| ------------------------ | --------------------------- |
+| `plugin.ErrInvalidInput` | Bad request (400).          |
+| `plugin.ErrNotFound`     | Missing resource (404).     |
+| `plugin.ErrUnauthorized` | Not authenticated (401).    |
+| `plugin.ErrForbidden`    | Not allowed (403).          |
+| `plugin.ErrConflict`     | Conflict (409).             |
+| `plugin.ErrUnavailable`  | Upstream unreachable (503). |
+| `plugin.ErrNotSupported` | Capability not implemented. |
 
 ## File uploads & downloads
 

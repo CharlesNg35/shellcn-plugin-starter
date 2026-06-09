@@ -40,15 +40,15 @@ Everything below is optional except identity, `Layout`, and at least one
 
 ## Identity
 
-| Field         | Notes                                                                                                  |
-| ------------- | ------------------------------------------------------------------------------------------------------ |
-| `APIVersion`  | Always `plugin.CurrentAPIVersion`. A mismatch is refused at load.                                      |
-| `Name`        | Unique, lowercase id (`redis`, `acme-db`). Stored on every connection - don't change it after release. |
-| `Version`     | Your plugin's own version string (bump per release).                                                   |
-| `Title`       | Human label in the catalog and workspace.                                                              |
-| `Description` | One line in the protocol picker.                                                                       |
-| `Icon`        | See [Icon](#icon).                                                                                     |
-| `Category`    | Groups the protocol in the picker (see [Category](#category)).                                         |
+| Field         | Notes                                                                                                                                                                                         |
+| ------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `APIVersion`  | Always `plugin.CurrentAPIVersion`. A mismatch is refused at load.                                                                                                                             |
+| `Name`        | Unique, lowercase id (`redis`, `acme-db`). Must match `[a-z][a-z0-9_-]*`; no dots, spaces, slashes, uppercase, or leading digits. Stored on every connection - don't change it after release. |
+| `Version`     | Your plugin's own version string (bump per release).                                                                                                                                          |
+| `Title`       | Human label in the catalog and workspace.                                                                                                                                                     |
+| `Description` | One line in the protocol picker.                                                                                                                                                              |
+| `Icon`        | See [Icon](#icon).                                                                                                                                                                            |
+| `Category`    | Groups the protocol in the picker (see [Category](#category)).                                                                                                                                |
 
 ### Icon
 
@@ -299,6 +299,7 @@ Tabs: []plugin.Panel{{
 | `PanelTaskProgress`  | `TaskProgressConfig`  | A streamed long-running task.      |
 | `PanelSplit`         | `SplitConfig`         | Resizable child panel composition. |
 | `PanelCanvas`        | `CanvasConfig`        | Plugin-driven canvas draw/input.   |
+| `PanelWasm`          | `WasmConfig`          | A sandboxed WebAssembly app.       |
 | `PanelEnroll`        | -                     | The agent-enrollment screen.       |
 
 `TableConfig` is documented in depth below; the other `*Config` structs follow
@@ -363,6 +364,20 @@ Use the most structured panel that fits the data:
   text boxes, explicit fill/stroke text, cursor changes, focus regions,
   announcements, images, gradients, patterns, snapshots, and SDK region builders.
   Image opacity is expressed through the embedded `canvas.Paint.Alpha` field.
+- Use `PanelWasm` only when an isolated browser-side program is the right tool:
+  games, heavy simulations, portable visualizers, or WASM libraries that cannot
+  be represented cleanly with the standard panels or the streamed canvas
+  protocol. The plugin still does not ship arbitrary ShellCN frontend code. It
+  declares `WasmConfig{Entry, Assets, Boot, Bridge}`; every asset is loaded
+  through a read route, every route/stream bridge is allow-listed in the
+  manifest, and the gateway runs the app in a sandboxed iframe. Do not use WASM
+  for tables, forms, settings, CRUD, object details, logs, terminals, or
+  ordinary charts that generic panels already handle.
+- For Go WASM, set `Runtime: plugin.WasmRuntimeGo`, declare `app.wasm` as the
+  `Entry`, and include `wasm_exec.js` in `Boot.Scripts` and `Assets`. The parent
+  renderer fetches the bytes through authenticated plugin routes and posts them
+  into the sandbox; the WASM app uses `window.shellcn.route`,
+  `window.shellcn.stream`, and `window.shellcn.asset` for declared bridge access.
 
 The gateway projects the SDK panel-config schema to the browser. Unknown config
 keys and wrong types are rejected by the generic renderer, so keep panel configs

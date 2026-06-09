@@ -41,7 +41,8 @@ and keep the plugin field-free.)
 The catalog is consistent because everyone follows the same scheme:
 
 - **Plugin `Name`** - lowercase, short, stable (`postgresql`, `ssh`, `kubernetes`).
-  Never change it after release; it's stored on every connection.
+  It must match `[a-z][a-z0-9_-]*`; no dots, spaces, slashes, uppercase, or
+  leading digits. Never change it after release; it's stored on every connection.
 - **Route `ID`** - `"{name}.{entity}.{action}"` (`postgresql.table.row.insert`,
   `ssh.shell`, `docker.container.logs`).
 - **`Permission`** - `"{name}.{resource}.{verb}"` (`docker.containers.read`,
@@ -260,6 +261,9 @@ databases, schemas, columns, namespaces, containers, or buckets.
 
 The manifest UX linter enforces the same idea at release time:
 
+- Route IDs must be owned by the plugin namespace. If the plugin is named
+  `starter`, use IDs such as `starter.list`, `starter.entry.create`, and
+  `starter.events`; never borrow another plugin's prefix or use unprefixed IDs.
 - Destructive and privileged actions must set `Confirm` with consequence-focused
   `ConfirmText`.
 - `OpenDock` is for long-lived interactive panels only: terminal, desktop, logs,
@@ -312,6 +316,7 @@ expects to inspect and act on that target:
   `map[string]string{"id": "${resource.uid}"}`. Do not rely on a loose
   top-level `uid` column for actions; keep visible columns domain-specific and
   put action identity in `ref`.
+
 - Keep the sidebar tree for navigation, not data. Do not add
   `TreeGroup.Source` or `TreeNode.ChildrenSource` just to expand every pod,
   container, task, backup, metric, table row, or message into the sidebar. If the
@@ -371,6 +376,15 @@ expects to inspect and act on that target:
   Wheel mode follows the same rule: `CanvasWheelNone` for no wheel behavior,
   `CanvasWheelModified` for optional zoom/pan, and `CanvasWheelCapture` only when
   wheel gestures are core to the canvas.
+- Use `PanelWasm` only for isolated browser-side programs that genuinely need
+  WASM: games, heavy simulations, portable visualizers, or existing WASM
+  libraries. It is still manifest-driven. Declare every asset in
+  `WasmConfig.Assets`, every boot script in `WasmConfig.Boot`, and every
+  callable route or stream in `WasmConfig.Bridge`. The app receives
+  `window.shellcn.route`, `window.shellcn.stream`, and `window.shellcn.asset`
+  inside a sandboxed iframe; undeclared access is rejected by the renderer. Do
+  not use WASM as a shortcut around `PanelTable`, `PanelForm`,
+  `PanelObjectDetail`, `PanelTimeline`, `PanelGraph`, or `PanelCanvas`.
 
 Cover the important features of the domain, not just the minimum route that
 works. A Kubernetes Pod overview should show scheduling, status, requests,
