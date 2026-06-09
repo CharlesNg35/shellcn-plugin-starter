@@ -352,11 +352,14 @@ expects to inspect and act on that target:
   accessible canvas-driven controls, and region helpers such as
   `canvas.RectRegion` for hit targets. For image opacity, use
   `canvas.Image{Paint: canvas.Paint{Alpha: ...}}`.
-- Prefer responsive Canvas surfaces that fit the available panel. For dense
-  Canvas surfaces that need a larger stable coordinate system, declare `Width`,
-  `Height`, and `Scrollable: true` instead of shrinking all nodes into the
-  visible viewport. This keeps labels, hit regions, and pointer coordinates
-  stable while giving the user normal panel scrolling.
+- Choose `CanvasConfig.ScaleMode` intentionally. Use `CanvasScaleResize` when the
+  plugin can redraw for the available viewport. Use `CanvasScaleFit` with
+  `Width` and `Height` for fixed logical coordinate systems that should scale
+  into the panel while preserving pointer coordinates. Use `CanvasScaleScroll`
+  for dense maps, whiteboards, timelines, dependency graphs, and linked-node
+  diagrams that need a larger stable surface and normal panel scrolling. Set
+  `MaxScale` when a fixed logical surface should not grow beyond its designed
+  size.
 - Use `CanvasConfig.WheelMode` deliberately. `CanvasWheelModified` is usually the
   best choice for zoomable maps and editors because ordinary mouse-wheel
   scrolling still works; reserve `CanvasWheelCapture` for surfaces where wheel

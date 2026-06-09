@@ -338,14 +338,19 @@ Use the most structured panel that fits the data:
   use canvas for ordinary tables, forms, settings, confirmations, or object
   details because the generic panels are more accessible, theme-consistent,
   searchable, and easier to validate.
-- Prefer responsive canvas surfaces that fit the available panel when the visual
-  can adapt to the reported `ready`/`resize` dimensions. For dense topology maps,
-  whiteboards, timelines, or diagrams that need a larger stable coordinate
-  system, set `CanvasConfig{Width, Height, Scrollable: true}` so the browser
-  scrolls the panel instead of forcing the plugin to compress dense content into
-  the visible viewport.
+- Choose a canvas sizing mode deliberately. Use
+  `CanvasConfig{ScaleMode: plugin.CanvasScaleResize}` when the plugin can redraw
+  responsively from the reported `ready`/`resize` dimensions. Use
+  `CanvasConfig{Width, Height, ScaleMode: plugin.CanvasScaleFit}` for fixed
+  logical coordinate systems that should scale down into the available panel
+  while pointer events still report logical coordinates. Use
+  `CanvasConfig{Width, Height, ScaleMode: plugin.CanvasScaleScroll}` for dense
+  topology maps, whiteboards, timelines, dependency graphs, or linked-node
+  diagrams where the content is naturally larger than the available viewport and
+  the user should pan by normal scrolling. `MaxScale` can cap fit-mode upscaling
+  when a surface should not grow beyond its designed size.
 - Use `CanvasConfig.WheelMode` to control mouse-wheel behavior:
-  `CanvasWheelAuto` captures wheel only for non-scrollable interactive canvases,
+  `CanvasWheelAuto` captures wheel only for non-scroll interactive canvases,
   `CanvasWheelCapture` always sends wheel events to the plugin,
   `CanvasWheelModified` sends wheel events only with Alt/Ctrl/Meta held so
   ordinary scrolling still works, and `CanvasWheelNone` disables wheel input.

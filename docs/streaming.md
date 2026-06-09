@@ -243,16 +243,27 @@ image-only opacity flag.
 
 Use `CanvasConfig{Interactive, Pointer, Keyboard, WheelMode, ResizeEvents}` to
 opt into input channels. Prefer responsive canvases that fit the available panel
-when the visual can adapt to the reported `ready`/`resize` dimensions. For dense
-maps or whiteboard-like surfaces, add
-`CanvasConfig{Width, Height, Scrollable: true}` so resize/ready events report the
-full drawing surface and the panel scrolls instead of clipping the model to the
-viewport.
+when the visual can adapt to the reported `ready`/`resize` dimensions.
+
+Use `ScaleMode` for sizing:
+
+- `CanvasScaleResize`: the plugin receives the viewport size as `width` and
+  `height` and redraws responsively.
+- `CanvasScaleFit`: the plugin declares `Width` and `Height`; the browser scales
+  that logical surface into the available panel and maps pointer/wheel
+  coordinates back to the logical coordinate system. Use `MaxScale` when the
+  surface should not upscale beyond its designed size.
+- `CanvasScaleScroll`: the plugin declares `Width` and `Height`; the panel
+  scrolls a larger 1:1 surface for dense maps, whiteboards, timelines,
+  dependency graphs, and linked-node diagrams.
+
+Ready and resize events include logical `width`/`height`, `viewportWidth`,
+`viewportHeight`, `scale`, `dpr`, and `theme`.
 
 Use `WheelMode` instead of a boolean:
 
 - `CanvasWheelAuto`: default behavior. Wheel input is captured for
-  non-scrollable interactive canvases and left to the browser for scrollable
+  non-scroll interactive canvases and left to the browser for scroll-mode
   canvases.
 - `CanvasWheelCapture`: always send wheel events to the plugin for intentional
   zoom/pan surfaces.
