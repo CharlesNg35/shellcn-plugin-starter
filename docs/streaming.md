@@ -193,14 +193,17 @@ func canvasStream(rc *plugin.RequestContext, client plugin.ClientStream) error {
             canvas.Clear{Color: "#020617"},
             canvas.Rect{
                 Paint: canvas.Paint{Fill: "#2563eb"},
-                X: 24, Y: 32, Width: 160, Height: 44, Radius: 8,
+                X: 24, Y: 32, Width: 160, Height: 44,
+                Radii: &canvas.Radii{TopLeft: 12, TopRight: 12, BottomRight: 6, BottomLeft: 6},
             },
             canvas.Text{
                 Paint: canvas.Paint{Fill: "#ffffff", Font: "600 16px Inter, sans-serif"},
                 X: 48, Y: 59, Text: "Click me",
             },
         },
-        Regions: []canvas.Region{{ID: "primary", X: 24, Y: 32, Width: 160, Height: 44, Cursor: "pointer"}},
+        Regions: []canvas.Region{
+            canvas.RectRegion("primary", 24, 32, 160, 44, canvas.WithCursor("pointer"), canvas.WithLabel("Primary action")),
+        },
     }); err != nil {
         return err
     }
@@ -227,8 +230,16 @@ On the wire these structs become JSON frames such as `{ "type": "clear" }`,
 events back, including `ready`, `resize`, `pointer`, `wheel`, and `key`. Plugins
 can draw custom controls and handle hit testing themselves, or declare rectangular
 `regions` so returned pointer events include a `regionId`. Use
-`CanvasRawCommand` only as an explicit escape hatch for experimental or future
+`canvas.RawCommand` only as an explicit escape hatch for experimental or future
 canvas commands that the current SDK does not model yet.
+
+The typed command set covers partial clears (`canvas.Clear{X, Y, Width,
+Height}`), per-corner rounded rectangles (`canvas.Radii`), path fill rules,
+`canvas.Text`, `canvas.FillText`, `canvas.StrokeText`, enhanced
+`canvas.TextBox` layout, images, gradients, patterns, snapshots, cursor changes,
+focused regions, and screen-reader announcements. Image opacity is controlled by
+the embedded `canvas.Paint.Alpha` field on `canvas.Image`; there is no separate
+image-only opacity flag.
 
 Use `CanvasConfig{Interactive, Pointer, Keyboard, WheelMode, ResizeEvents}` to
 opt into input channels. Prefer responsive canvases that fit the available panel

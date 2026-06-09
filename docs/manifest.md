@@ -349,6 +349,11 @@ Use the most structured panel that fits the data:
   `CanvasWheelCapture` always sends wheel events to the plugin,
   `CanvasWheelModified` sends wheel events only with Alt/Ctrl/Meta held so
   ordinary scrolling still works, and `CanvasWheelNone` disables wheel input.
+- Canvas frames should use the typed `sdk/plugin/canvas` helpers for richer
+  primitives: partial clears, per-corner `Radii`, path fill rules, enhanced
+  text boxes, explicit fill/stroke text, cursor changes, focus regions,
+  announcements, images, gradients, patterns, snapshots, and SDK region builders.
+  Image opacity is expressed through the embedded `canvas.Paint.Alpha` field.
 
 The gateway projects the SDK panel-config schema to the browser. Unknown config
 keys and wrong types are rejected by the generic renderer, so keep panel configs

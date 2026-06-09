@@ -344,6 +344,14 @@ expects to inspect and act on that target:
   those panels remain the professional default for operations UI because they
   preserve accessibility, keyboard behavior, validation, export, theming, and
   generic renderer consistency.
+- Use the richer typed canvas helpers before inventing raw command payloads:
+  `canvas.Radii` for per-corner cards, partial `canvas.Clear` for dirty regions,
+  `canvas.TextBox` for padded/ellipsized labels, `canvas.FillText` or
+  `canvas.StrokeText` when text rendering must be explicit, `canvas.Cursor` for
+  global cursor changes, `canvas.FocusRegion` and `canvas.Announce` for
+  accessible canvas-driven controls, and region helpers such as
+  `canvas.RectRegion` for hit targets. For image opacity, use
+  `canvas.Image{Paint: canvas.Paint{Alpha: ...}}`.
 - Prefer responsive Canvas surfaces that fit the available panel. For dense
   Canvas surfaces that need a larger stable coordinate system, declare `Width`,
   `Height`, and `Scrollable: true` instead of shrinking all nodes into the
