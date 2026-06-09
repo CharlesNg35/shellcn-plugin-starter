@@ -316,6 +316,26 @@ plugin.WasmConfig{
 }
 ```
 
+Use `Runtime: plugin.WasmRuntimeGeneric` when the WASM artifact is not a Go
+`wasm_exec.js` program. This is common for Rust frameworks such as Leptos or
+Yew, wasm-bindgen outputs, Emscripten builds, and other toolchains that generate
+JavaScript glue. In that shape, declare the compiled WASM as `Entry`, declare the
+generated `app.js` or your own `boot.js` in both `Boot.Scripts` and `Assets`, and
+declare any additional generated files in `Assets`.
+
+For simple C/C++/Rust modules that can be instantiated with an empty import
+object and export `_start` or `main`, leave `Boot.Scripts` empty. ShellCN will
+instantiate `Entry` directly. Add boot scripts only when the toolchain needs
+generated imports, runtime glue, or framework setup.
+
+Generic boot scripts run inside the sandbox before the entrypoint is
+instantiated. They should load generated WASM/data bytes with
+`window.shellcn.asset(window.shellcn.entry)` and pass those bytes to the
+framework loader. Do not depend on relative URLs, `document.currentScript.src`,
+cookies, localStorage, or same-origin fetches; the iframe intentionally has an
+opaque origin. Do not point `Entry` at a fake or placeholder file just because a
+framework has a boot script. `Entry` is still the real primary WASM artifact.
+
 Inside the sandbox, the app calls `window.shellcn.route(routeId, body, options)`,
 `window.shellcn.stream(routeId, params)`, and `window.shellcn.asset(path)`.
 The renderer rejects calls to undeclared routes, wrong methods, undeclared

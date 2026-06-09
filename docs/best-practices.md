@@ -387,6 +387,12 @@ expects to inspect and act on that target:
   custom rendering respects light and dark mode. Do not use WASM as a shortcut
   around `PanelTable`, `PanelForm`,
   `PanelObjectDetail`, `PanelTimeline`, `PanelGraph`, or `PanelCanvas`.
+- For generic WASM toolchains, expect a small JavaScript loader. Rust frameworks
+  such as Leptos/Yew and wasm-bindgen usually emit `app.js` plus `app_bg.wasm`
+  or require a `boot.js` wrapper. Declare those files in the manifest and load
+  the real entry bytes through `window.shellcn.asset(window.shellcn.entry)`;
+  avoid placeholder entries, relative fetches, and same-origin assumptions
+  because the iframe is intentionally sandboxed.
 
 Cover the important features of the domain, not just the minimum route that
 works. A Kubernetes Pod overview should show scheduling, status, requests,

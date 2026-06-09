@@ -385,6 +385,22 @@ Use the most structured panel that fits the data:
   `window.shellcn.stream`, and `window.shellcn.asset` for declared bridge access.
   Read `window.shellcn.theme` and subscribe with `window.shellcn.onTheme(fn)` so
   custom DOM/canvas/WebGL rendering follows ShellCN light and dark mode.
+- For Rust, Leptos, Yew, wasm-bindgen, Emscripten, TinyGo without the Go runtime,
+  or any framework that emits JavaScript glue, use
+  `Runtime: plugin.WasmRuntimeGeneric`. The `Entry` is still the WASM binary
+  ShellCN validates and serves through `window.shellcn.asset`, but the framework
+  normally needs an `app.js`, `boot.js`, or similar loader in `Boot.Scripts`.
+  Declare both the JS loader and every referenced WASM/data file in `Assets`.
+  The host exposes the declared entry path as `window.shellcn.entry`; the boot
+  script should load bytes through
+  `window.shellcn.asset(window.shellcn.entry)` instead of relying on relative
+  URLs, `document.currentScript.src`, cookies, or same-origin fetches. Do not
+  use placeholder entries such as `noop.wasm`; `Entry` should be the real main
+  WASM artifact.
+- For simple generic WASM, such as a small C/C++/Rust module that can be
+  instantiated with an empty import object and exports `_start` or `main`, omit
+  `Boot.Scripts`; ShellCN will instantiate `Entry` directly. Add boot scripts
+  only when the toolchain needs generated imports or runtime setup.
 
 The gateway projects the SDK panel-config schema to the browser. Unknown config
 keys and wrong types are rejected by the generic renderer, so keep panel configs
