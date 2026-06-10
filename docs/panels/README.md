@@ -68,7 +68,12 @@ See [Panel theming](theming.md) for exact payloads and examples.
 ## Route method rules
 
 - Read panels normally use `MethodGet`.
-- Stream panels use `MethodWS` and must also declare a matching `Stream`.
+- Long-lived stream panels use `MethodWS`.
+- Terminal, terminal grid, log stream, remote desktop, metrics, task progress,
+  and canvas panels must also declare a matching `Stream` entry.
+- Query editor uses a `MethodWS` source route, but it does not declare a
+  top-level `Stream` because it is request/result oriented rather than a
+  recordable transport stream.
 - Mutating panels call routes named in their config, such as
   `CodeEditorConfig.SaveRouteID` or `TableConfig.Insert`.
 - Action-opened panels (`OpenDialog`, `OpenDock`) still use normal panel config.

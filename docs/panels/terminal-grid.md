@@ -15,6 +15,12 @@ plugin.Panel{
 }
 ```
 
+Declare the stream route in `Streams()`:
+
+```go
+plugin.Stream{ID: "demo.shell", Kind: plugin.StreamTerminal, RouteID: "demo.shell"}
+```
+
 The stream handler must be stateless per open stream. Do not share PTYs or
 command state across panes.
 

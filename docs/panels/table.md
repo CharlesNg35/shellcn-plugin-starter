@@ -67,7 +67,7 @@ type itemRow struct {
 ```
 
 Action params such as `${resource.uid}` resolve from this `ref`, not from an
-arbitrary visible column. Keep `ref.Type` consistent with the manifest resource
+arbitrary visible column. Keep `ref.Kind` consistent with the manifest resource
 type.
 
 ## Columns

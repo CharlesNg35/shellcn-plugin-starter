@@ -26,7 +26,38 @@ plugin.Panel{
 }
 ```
 
-The list route returns a paged directory listing. Download routes return
-`*plugin.Download`; upload routes read `rc.Uploads(UploadFieldName)`.
+The list route returns a paged directory listing:
+
+```json
+{
+  "path": "/var/log",
+  "items": [
+    { "name": "syslog", "path": "/var/log/syslog", "isDir": false, "size": 4096 }
+  ]
+}
+```
+
+Read routes return preview content:
+
+```json
+{ "path": "/var/log/syslog", "encoding": "utf8", "content": "...", "truncated": false }
+```
+
+Download routes return `*plugin.Download`; upload routes read
+`rc.Uploads(UploadFieldName)`.
+
+Operation route calls use these methods and bodies:
+
+| Operation | Method | Body |
+| --- | --- | --- |
+| Save file | `PUT` | `{ "content": "..." }` |
+| Create directory | default action method | `{ "name": "new-dir" }` |
+| Rename | `PATCH` | `{ "name": "new-name" }` |
+| Delete | `DELETE` | `{ "path": "/path/to/item" }` |
+| Move/copy | default action method | `{ "paths": ["..."], "dest": "/target" }` |
+| Chmod | default action method | `{ "paths": ["..."], "mode": "0644" }` |
+| Archive | `POST` | `{ "paths": ["..."] }` and returns a download |
+
+Each operation also receives the selected path through `PathParam`.
 
 Always normalize and confine paths. Never trust browser-supplied paths.

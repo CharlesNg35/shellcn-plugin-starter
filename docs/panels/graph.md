@@ -17,11 +17,33 @@ plugin.Panel{
 }
 ```
 
-The source route should return a graph object with stable node ids and edge
-endpoints. Keep labels short and include enough metadata for tooltips/details.
+The source route returns a graph object with stable node ids and edge endpoints:
+
+```json
+{
+  "nodes": [
+    {
+      "id": "svc:api",
+      "label": "API",
+      "group": "service",
+      "summary": "Public gateway",
+      "fields": [{ "name": "port", "type": "int", "key": "8080" }],
+      "properties": { "namespace": "prod" }
+    }
+  ],
+  "edges": [
+    { "source": "svc:api", "target": "db:main", "label": "queries" }
+  ]
+}
+```
+
+Keep labels short and include enough metadata for the detail drawer. Edge
+endpoints must reference node ids in the same payload.
 
 `Exportable` is a pointer: nil means client-side image export is available. Set
 it to `false` only when graph content is sensitive.
 
 Use `ExpandRouteID` when a node can lazy-load neighbors. The expand route should
-be read-only and bounded.
+be read-only and bounded. It receives the selected node id in `ExpandParam`
+(`node` by default) and returns another graph object. The renderer merges new
+node ids and edge ids into the current graph.

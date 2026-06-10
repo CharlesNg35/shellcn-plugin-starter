@@ -9,6 +9,7 @@ a tab or a reusable panel.
 plugin.Panel{
     Key: "settings", Label: "Settings", Icon: icon("sliders-horizontal"),
     Type: plugin.PanelForm,
+    Source: &plugin.DataSource{RouteID: "demo.settings.schema"},
     Config: plugin.FormPanelConfig{
         SubmitRouteID: "demo.settings.save",
         SubmitMethod:  plugin.MethodPut,
@@ -19,8 +20,17 @@ plugin.Panel{
 
 ## Submit route
 
-The submit route should declare an `Input` schema. The same schema renders the
-fields and validates the request before your handler runs.
+The panel `Source` route returns a `plugin.Schema`; that schema renders the
+fields. The submit route should declare the same schema as `Input`, so the
+gateway validates the request before your handler runs.
+
+```go
+plugin.Route{
+    ID: "demo.settings.schema", Method: plugin.MethodGet, Path: "/settings/schema",
+    Permission: "demo.settings.read", Risk: plugin.RiskSafe,
+    AuditEvent: "demo.settings.schema", Handle: settingsSchemaRoute,
+}
+```
 
 ```go
 plugin.Route{
@@ -28,6 +38,12 @@ plugin.Route{
     Permission: "demo.settings.write", Risk: plugin.RiskWrite,
     AuditEvent: "demo.settings.save", Input: settingsSchema(),
     Handle: saveSettings,
+}
+```
+
+```go
+func settingsSchemaRoute(*plugin.RequestContext) (any, error) {
+    return settingsSchema(), nil
 }
 ```
 

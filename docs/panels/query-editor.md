@@ -29,26 +29,26 @@ plugin.Panel{
 ## Stream route
 
 The source route is `MethodWS`. The panel sends execution requests to the stream
-as JSON. Existing plugins use a shape like this:
+as JSON:
 
 ```json
-{ "query": "SELECT 1;", "requestId": "client-generated-id" }
+{ "query": "SELECT 1;", "confirm": false }
 ```
 
-Some older examples include `confirm` for risky executions:
+When the user accepts a confirmation prompt, the panel resends the same query
+with `confirm: true`:
 
 ```json
 { "query": "DROP TABLE demo;", "confirm": true }
 ```
 
-Handlers should tolerate unknown fields and validate the fields they actually
-need.
+Handlers should tolerate unknown fields, but the current panel only depends on
+`query` and `confirm`. Validate both server-side.
 
 ```go
 type queryRequest struct {
-    Query     string `json:"query"`
-    RequestID string `json:"requestId,omitempty"`
-    Confirm   bool   `json:"confirm,omitempty"`
+    Query   string `json:"query"`
+    Confirm bool   `json:"confirm,omitempty"`
 }
 
 func queryStream(rc *plugin.RequestContext, client plugin.ClientStream) error {
@@ -66,8 +66,16 @@ func queryStream(rc *plugin.RequestContext, client plugin.ClientStream) error {
         req.Query = strings.TrimSpace(req.Query)
         if req.Query == "" {
             if err := enc.Encode(map[string]any{
-                "requestId": req.RequestID,
-                "error":     "query is required",
+                "error": "query is required",
+            }); err != nil {
+                return err
+            }
+            continue
+        }
+        if needsConfirmation(req.Query) && !req.Confirm {
+            if err := enc.Encode(map[string]any{
+                "confirmRequired": true,
+                "confirmMessage":  "This query changes data. Run it anyway?",
             }); err != nil {
                 return err
             }
@@ -75,16 +83,15 @@ func queryStream(rc *plugin.RequestContext, client plugin.ClientStream) error {
         }
 
         params := map[string]string{
-            "requestId": req.RequestID,
             "bytes":     strconv.Itoa(len(req.Query)),
+            "confirmed": strconv.FormatBool(req.Confirm),
         }
 
         result, err := executeQuery(rc.Ctx, req.Query)
         if err != nil {
             rc.Audit(plugin.AuditError, params, err)
             if sendErr := enc.Encode(map[string]any{
-                "requestId": req.RequestID,
-                "error":     err.Error(),
+                "error": err.Error(),
             }); sendErr != nil {
                 return sendErr
             }
@@ -108,7 +115,6 @@ For tabular query results, return stable JSON fields:
 
 ```json
 {
-  "requestId": "client-generated-id",
   "columns": ["id", "name"],
   "rows": [[1, "alpha"], [2, "beta"]],
   "rowCount": 2,
@@ -125,7 +131,6 @@ For non-tabular protocols, still keep the envelope stable:
 
 ```json
 {
-  "requestId": "client-generated-id",
   "message": "Index compacted",
   "elapsedMs": 124
 }
@@ -134,7 +139,14 @@ For non-tabular protocols, still keep the envelope stable:
 Use an error frame instead of closing the socket for normal execution errors:
 
 ```json
-{ "requestId": "client-generated-id", "error": "permission denied" }
+{ "error": "permission denied" }
+```
+
+For risky executions, return a confirmation challenge instead of running the
+query:
+
+```json
+{ "confirmRequired": true, "confirmMessage": "This query changes data. Run it anyway?" }
 ```
 
 Close the stream only for transport failure, context cancel, malformed protocol
@@ -204,6 +216,8 @@ See [plugin storage](../storage.md).
 - Empty query returns an error frame and keeps the stream open.
 - Successful query returns ordered `columns`, `rows`, `rowCount`, and timing.
 - Backend execution error returns an error frame and keeps the stream open.
+- Risky execution returns `confirmRequired` until the request includes
+  `confirm: true`.
 - Context cancellation exits the stream.
 - Each execution emits an audit event.
 - Saved-query routes use `rc.Storage` and destructive deletes use

@@ -16,6 +16,12 @@ plugin.Panel{
 }
 ```
 
+Declare the watch route in `Streams()`:
+
+```go
+plugin.Stream{ID: "demo.task.watch", Kind: plugin.StreamTask, RouteID: "demo.task.watch"}
+```
+
 The source route is `MethodWS` and streams task status/progress frames as JSON.
 Keep the frame shape stable and test it. Common fields are `status`, `message`,
 `progress`, `current`, `total`, `startedAt`, and `finishedAt`.

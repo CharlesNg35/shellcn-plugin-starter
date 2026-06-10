@@ -20,6 +20,12 @@ plugin.Panel{
 }
 ```
 
+Declare the stream route in `Streams()` as well:
+
+```go
+plugin.Stream{ID: "demo.metrics", Kind: plugin.StreamMetrics, RouteID: "demo.metrics"}
+```
+
 The stream writes JSON snapshots:
 
 ```json

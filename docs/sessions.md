@@ -82,7 +82,12 @@ type NetTransport interface {
 ### L4 (sockets / TCP-based protocols)
 
 ```go
-conn, err := cfg.Net.DialContext(ctx, "tcp", cfg.String("host")+":"+port)
+port, ok := cfg.Int("port")
+if !ok {
+    port = 22
+}
+addr := net.JoinHostPort(cfg.String("host"), strconv.Itoa(port))
+conn, err := cfg.Net.DialContext(ctx, "tcp", addr)
 // speak your protocol over conn; the gateway routes it (direct or agent).
 ```
 
@@ -103,7 +108,12 @@ Store the transport on your session in `Connect` and reuse it from handlers.
 
 ```go
 func (Starter) Connect(ctx context.Context, cfg plugin.ConnectConfig) (plugin.Session, error) {
-    conn, err := cfg.Net.DialContext(ctx, "tcp", cfg.String("host")+":"+strconv.Itoa(port))
+    port, ok := cfg.Int("port")
+    if !ok {
+        port = 22
+    }
+    addr := net.JoinHostPort(cfg.String("host"), strconv.Itoa(port))
+    conn, err := cfg.Net.DialContext(ctx, "tcp", addr)
     if err != nil {
         return nil, err // propagates to the client as a clear connect error
     }

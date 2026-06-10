@@ -115,9 +115,8 @@ Channel kinds: `StreamTerminal`, `StreamLogs`, `StreamDesktop`, `StreamMetrics`,
 
 ### Resizable terminals and desktop init (optional channel methods)
 
-A `Channel` can carry two control capabilities by simply adding methods - the
-gateway detects them and wires them up (this works the same for built-in and
-external plugins):
+A `Channel` can carry two control capabilities by simply adding methods. The
+gateway detects them and wires them up:
 
 ```go
 // Terminal/exec: let the browser resize the pty.
@@ -238,8 +237,8 @@ On the wire these structs become JSON frames such as `{ "type": "clear" }`,
 events back, including `ready`, `resize`, `pointer`, `wheel`, and `key`. Plugins
 can draw custom controls and handle hit testing themselves, or declare rectangular
 `regions` so returned pointer events include a `regionId`. Use
-`canvas.RawCommand` only as an explicit escape hatch for experimental or future
-canvas commands that the current SDK does not model yet.
+`canvas.RawCommand` only as an explicit escape hatch for extension commands that
+the current SDK does not model yet.
 
 The typed command set covers partial clears (`canvas.Clear{X, Y, Width,
 Height}`), per-corner rounded rectangles (`canvas.Radii`), path fill rules,

@@ -44,8 +44,12 @@ Config: plugin.CodeEditorConfig{
 Then the body is:
 
 ```json
-{ "mapping": "..." }
+{ "mapping": { "properties": {} } }
 ```
+
+When `SaveBodyKey` is set, the renderer parses the editor text as JSON and puts
+the parsed value under that key. Use it for JSON structured update routes. Leave
+`SaveBodyKey` empty when the backend expects raw text in `content`.
 
 `SaveExtra` adds fixed fields to the save body. Validate the body again in the
 handler with `rc.Bind`.
