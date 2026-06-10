@@ -16,7 +16,7 @@ type Storage interface {
     Get(ctx context.Context, scope StorageScope, key string) (StorageItem, error)
     Put(ctx context.Context, collection string, item StorageItem) (StorageItem, error)
     Delete(ctx context.Context, scope StorageScope, key string) error
-    List(ctx context.Context, scope StorageScope) ([]StorageItem, error)
+    List(ctx context.Context, scope StorageScope, filter *StorageListFilter) ([]StorageItem, error)
 }
 ```
 
@@ -32,10 +32,23 @@ type StorageItem struct {
     CreatedAt   time.Time
     UpdatedAt   time.Time
 }
+
+type StorageListFilter struct {
+    Keys          []string
+    KeyPrefix     string
+    ContentType   string
+    CreatedAfter  time.Time
+    CreatedBefore time.Time
+    UpdatedAfter  time.Time
+    UpdatedBefore time.Time
+    Limit         int
+    Offset        int
+}
 ```
 
 `Value` is opaque to the core. JSON is common, but the storage layer does not
-inspect it. `Metadata` is for lightweight labels, grouping, or local sorting.
+inspect it. `Metadata` is for lightweight labels, grouping, or local sorting;
+it is returned with the item but is not part of `StorageListFilter`.
 Do not duplicate owner id, plugin id, connection id, `CreatedAt`, or `UpdatedAt`
 inside the JSON payload; the core owns those fields.
 
@@ -125,8 +138,10 @@ same plugin:
 lowercase plural names such as `saved_queries`, `snippets`, `templates`,
 `profiles`, or `todos`.
 
-`Key` is the record identifier inside the collection. The storage API does not
-expose prefix search. Model hierarchy in the JSON value or use generated ids.
+`Key` is the record identifier inside the collection. Use generated keys for
+user-created records unless a stable natural key is part of the behavior. Use
+namespaced keys when a collection contains more than one logical family, for
+example `query/<uuid>`, `template/<uuid>`, or `profile/default`.
 
 For `UserStorage`, keys must be unique for that user/plugin/collection across
 connections when you call `Get` or `Delete` by key. If two connection rows share
@@ -139,6 +154,45 @@ key.
 the UI needs to show where a record came from, include that context in
 `Metadata` or in the JSON value when the record is written. Do not rely on
 plugins receiving raw database scope columns; they are intentionally hidden.
+
+## List filters
+
+`List` accepts a nil filter or one `*StorageListFilter`. The filter is applied
+inside the resolved plugin/user/connection scope; it cannot widen scope or
+select another plugin's rows.
+
+```go
+rows, err := rc.Storage.List(
+    rc.Ctx,
+    plugin.ConnectionStorage("saved_queries"),
+    &plugin.StorageListFilter{
+        KeyPrefix:   "query/",
+        ContentType: "application/json",
+        UpdatedAfter: time.Now().Add(-30 * 24 * time.Hour),
+        Limit:       100,
+    },
+)
+```
+
+Supported filters:
+
+- `Keys`: exact item keys to return. Use this when you need a known set. For a
+  required single record, prefer `Get`.
+- `KeyPrefix`: literal key prefix. Prefix characters such as `%` and `_` are
+  treated as normal key characters, not wildcard syntax.
+- `ContentType`: exact content type match, commonly `application/json`.
+- `CreatedAfter` / `CreatedBefore`: inclusive creation timestamp window.
+- `UpdatedAfter` / `UpdatedBefore`: inclusive update timestamp window.
+- `Limit` / `Offset`: deterministic pagination over the storage order.
+
+Filters are intentionally based on indexed or simple database fields. The store
+does not query inside `Value`, and list filters do not match `Metadata`. If a
+field must be queried, put it in the key shape, split records into collections,
+or model a plugin route that reads and filters the target system directly.
+
+The returned order is deterministic by scope columns and key. Plugin handlers
+can still sort decoded rows for UI needs, such as case-insensitive display
+names, but storage pagination should use the storage order.
 
 ## Write a record
 
@@ -167,7 +221,7 @@ func saveQuery(rc *plugin.RequestContext) (any, error) {
     }
     id := uuid.NewString()
     item, err := rc.Storage.Put(rc.Ctx, "saved_queries", plugin.StorageItem{
-        Key:         id,
+        Key:         "query/" + id,
         Value:       body,
         ContentType: "application/json",
         Metadata:    map[string]string{"name": in.Name},
@@ -186,7 +240,11 @@ when replacing the same logical record is the expected behavior.
 
 ```go
 func listQueries(rc *plugin.RequestContext) (any, error) {
-    rows, err := rc.Storage.List(rc.Ctx, plugin.ConnectionStorage("saved_queries"))
+    rows, err := rc.Storage.List(
+        rc.Ctx,
+        plugin.ConnectionStorage("saved_queries"),
+        &plugin.StorageListFilter{KeyPrefix: "query/", ContentType: "application/json"},
+    )
     if err != nil {
         return nil, err
     }
@@ -273,7 +331,7 @@ gateway store and is exposed through normal plugin routes.
 
 ```go
 func listTodos(rc *plugin.RequestContext) (any, error) {
-    rows, err := rc.Storage.List(rc.Ctx, plugin.ConnectionStorage("todos"))
+    rows, err := rc.Storage.List(rc.Ctx, plugin.ConnectionStorage("todos"), nil)
     if err != nil {
         return nil, err
     }
@@ -318,7 +376,7 @@ Prefer `rc.Storage` in route and stream handlers:
 
 ```go
 func route(rc *plugin.RequestContext) (any, error) {
-    return rc.Storage.List(rc.Ctx, plugin.ConnectionStorage("templates"))
+    return rc.Storage.List(rc.Ctx, plugin.ConnectionStorage("templates"), nil)
 }
 ```
 
@@ -343,10 +401,19 @@ secret vault. Examples that must not go into storage:
 Use a small fake `plugin.Storage` in handler tests. Keep it scoped like the real
 API: `Put` writes by collection/key, `List` filters by `StorageScope`, and
 `Get`/`Delete` return `plugin.ErrNotFound` for missing keys.
+The example below uses standard `slices`, `sort`, and `strings` helpers.
 
 ```go
 type fakeStorage struct {
     items map[string]plugin.StorageItem
+}
+
+func (s *fakeStorage) Get(_ context.Context, scope plugin.StorageScope, key string) (plugin.StorageItem, error) {
+    item, ok := s.items[scope.Collection+"/"+key]
+    if !ok {
+        return plugin.StorageItem{}, plugin.ErrNotFound
+    }
+    return item, nil
 }
 
 func (s *fakeStorage) Put(_ context.Context, collection string, item plugin.StorageItem) (plugin.StorageItem, error) {
@@ -355,6 +422,49 @@ func (s *fakeStorage) Put(_ context.Context, collection string, item plugin.Stor
     }
     s.items[collection+"/"+item.Key] = item
     return item, nil
+}
+
+func (s *fakeStorage) Delete(_ context.Context, scope plugin.StorageScope, key string) error {
+    fullKey := scope.Collection + "/" + key
+    if _, ok := s.items[fullKey]; !ok {
+        return plugin.ErrNotFound
+    }
+    delete(s.items, fullKey)
+    return nil
+}
+
+func (s *fakeStorage) List(_ context.Context, scope plugin.StorageScope, filter *plugin.StorageListFilter) ([]plugin.StorageItem, error) {
+    if filter == nil {
+        filter = &plugin.StorageListFilter{}
+    }
+
+    out := make([]plugin.StorageItem, 0, len(s.items))
+    for fullKey, item := range s.items {
+        if !strings.HasPrefix(fullKey, scope.Collection+"/") {
+            continue
+        }
+        if len(filter.Keys) > 0 && !slices.Contains(filter.Keys, item.Key) {
+            continue
+        }
+        if filter.KeyPrefix != "" && !strings.HasPrefix(item.Key, filter.KeyPrefix) {
+            continue
+        }
+        if filter.ContentType != "" && item.ContentType != filter.ContentType {
+            continue
+        }
+        out = append(out, item)
+    }
+    sort.Slice(out, func(i, j int) bool { return out[i].Key < out[j].Key })
+    if filter.Offset > 0 {
+        if filter.Offset >= len(out) {
+            return nil, nil
+        }
+        out = out[filter.Offset:]
+    }
+    if filter.Limit > 0 && filter.Limit < len(out) {
+        out = out[:filter.Limit]
+    }
+    return out, nil
 }
 ```
 

@@ -157,7 +157,7 @@ Read, list, and delete with a scope. The scope is a filter, not a persisted
 field:
 
 ```go
-rows, err := rc.Storage.List(rc.Ctx, plugin.UserStorage("snippets"))
+rows, err := rc.Storage.List(rc.Ctx, plugin.UserStorage("snippets"), nil)
 ```
 
 - `plugin.StorageScope{Collection: "snippets"}` or
@@ -167,9 +167,8 @@ rows, err := rc.Storage.List(rc.Ctx, plugin.UserStorage("snippets"))
   plugin's connections.
 - `Collection` separates logical record groups inside the plugin. Use a stable,
   lowercase plural name (`snippets`, `saved_queries`, `profiles`).
-- `Key` is the record identifier inside that collection. If you need hierarchy,
-  encode it in your own value or key convention; the storage API intentionally
-  does not expose a prefix filter.
+- `Key` is the record identifier inside that collection. If you need hierarchy
+  for list routes, use a stable key prefix and `StorageListFilter.KeyPrefix`.
 - For `plugin.UserStorage(...)`, make keys unique for that user/plugin/collection
   across connections. Use generated IDs for user-owned records; keyed get/delete
   operations fail with a conflict if the same key exists in multiple
