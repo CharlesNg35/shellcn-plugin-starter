@@ -3,10 +3,11 @@
 Beyond request/response routes, a plugin can serve **interactive byte-streams** -
 an SSH-style terminal, a live log tail, an exec session, a desktop. These ride
 WebSocket routes and tracked channels. The gateway stays the byte-pump in the
-middle, so streams are recorded and audited exactly like a built-in's.
+middle, so streams use the same recording, audit, auth, and transport wrapper as
+ordinary plugin routes.
 
 This template doesn't stream (it returns `ErrNotSupported` from `OpenChannel`),
-but here's the full shape, mirroring how the SSH/Docker/Kubernetes built-ins do it.
+but the full shape is:
 
 ## A WebSocket route
 
@@ -51,7 +52,7 @@ func shellStream(rc *plugin.RequestContext, client plugin.ClientStream) error {
 }
 ```
 
-Rules the built-ins follow:
+Rules for stream handlers:
 
 - `defer ch.Close()` - never leak the upstream.
 - Always `select` on `client.Context().Done()` so a browser disconnect tears the
@@ -347,7 +348,8 @@ The sandbox also receives the ShellCN theme through `window.shellcn.theme`
 (`"light"` or `"dark"`). For live changes, call
 `window.shellcn.onTheme((theme) => { ... })`; the parent posts theme updates
 through the same bridge, so the WASM app does not need same-origin access or
-parent DOM reads.
+parent DOM reads. See [panel theming](panels/theming.md) and
+[PanelWasm](panels/wasm.md) for the full bridge API.
 
 The sandbox intentionally omits `allow-same-origin`. The app runs with an opaque
 origin and communicates with the host only through the declared `postMessage`

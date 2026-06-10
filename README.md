@@ -62,6 +62,9 @@ It now appears in the connection catalog like any built-in protocol.
 - [Manifest](docs/manifest.md) - describing your plugin and its UI.
 - [Routes](docs/routes.md) - endpoints, input, validation, errors.
 - [Sessions](docs/sessions.md) - per-connection state and reaching the target.
+- [Storage](docs/storage.md) - scoped plugin-owned saved queries, snippets, templates, and preferences.
+- [Credentials](docs/credentials.md) - reusable credentials, inline secrets, and secret handling.
+- [Panel reference](docs/panels/README.md) - every panel type, route method, payload shape, and config.
 - [Streaming](docs/streaming.md) - terminals, logs, channels, recording.
 - [Explorer & database plugins](docs/explorer.md) - trees, scope filters, sorting, editable grids, query editors.
 - [File browser plugins](docs/file-browser.md) - the file-manager UI: listing, range downloads, uploads.
@@ -69,7 +72,7 @@ It now appears in the connection catalog like any built-in protocol.
 - [Web proxy](docs/web-proxy.md) - embed a target's web UI through the gateway.
 - [Agents](docs/agents.md) - tunnelling into a private network.
 - [Build & install](docs/build-and-install.md) - compile, ship, load, version.
-- [Best practices](docs/best-practices.md) - conventions from the built-in plugins.
+- [Best practices](docs/best-practices.md) - conventions, validation, and review checklist.
 
 ## License
 

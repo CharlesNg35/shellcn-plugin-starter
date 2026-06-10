@@ -45,6 +45,10 @@ type Plugin interface {
 - **[Sessions](sessions.md)** - `Connect` opens a live, per-connection runtime
   (the `Session`) that holds all state for one connection. The plugin value
   itself is stateless and shared across all connections.
+- **[Storage](storage.md)** - small, scoped plugin-owned persistence for saved
+  queries, snippets, request templates, preferences, and drafts.
+- **[Panel reference](panels/README.md)** - the route and payload contract for
+  every generic renderer panel.
 
 ## What the gateway does for you
 
@@ -60,20 +64,27 @@ You write protocol logic; the gateway owns everything around it:
 - **UI** - panels, tables, forms, trees, terminals, and the connection form are
   all rendered from your manifest.
 - **Recording, sessions, transport, TLS** - all core-owned.
+- **Storage scoping** - plugin storage is filtered by plugin, user, and
+  connection; plugins never receive raw database access.
 
 ## Read next
 
 1. [Manifest](manifest.md) - start here; it's most of a plugin.
 2. [Routes](routes.md) - handlers, input, validation, errors.
 3. [Sessions](sessions.md) - state and reaching the target.
-4. [Streaming](streaming.md) - terminals, logs, channels, recording.
-5. [Explorer & database plugins](explorer.md) - trees, scope filters, sorting,
+4. [Storage](storage.md) and [Credentials](credentials.md) - persisted plugin
+   user data, reusable credentials, and secret handling.
+5. [Panel reference](panels/README.md) and [panel theming](panels/theming.md) -
+   per-panel config, route methods, payload contracts, and theme handoff for
+   custom surfaces.
+6. [Streaming](streaming.md) - terminals, logs, channels, recording.
+7. [Explorer & database plugins](explorer.md) - trees, scope filters, sorting,
    selectable rows, editable grids, query editors.
-6. [File browser plugins](file-browser.md) - the file-manager UI: listing, range
+8. [File browser plugins](file-browser.md) - the file-manager UI: listing, range
    downloads, uploads, bulk ops.
-7. [Metrics & dashboards](metrics.md) - stat cards, gauges, time-series charts,
+9. [Metrics & dashboards](metrics.md) - stat cards, gauges, time-series charts,
    and overview grids.
-8. [Web proxy](web-proxy.md) - embed a target's own web UI through the gateway.
-9. [Agents](agents.md) - reaching targets in a private network.
-10. [Build & install](build-and-install.md) - compile, ship, load, version.
-11. [Best practices](best-practices.md) - conventions distilled from the built-ins.
+10. [Web proxy](web-proxy.md) - embed a target's own web UI through the gateway.
+11. [Agents](agents.md) - reaching targets in a private network.
+12. [Build & install](build-and-install.md) - compile, ship, load, version.
+13. [Best practices](best-practices.md) - conventions, validation, and review checklist.

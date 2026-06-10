@@ -13,18 +13,18 @@ your handler runs, and a handler that is pure business logic.
 
 ## Fields
 
-| Field        | Purpose                                                               |
-| ------------ | --------------------------------------------------------------------- |
-| `ID`         | Stable handle referenced by panels/actions/manifest.                  |
-| `Method`     | `MethodGet` / `Post` / `Put` / `Patch` / `Delete`, or `MethodWS`.     |
-| `Path`       | Route path; `{name}` placeholders arrive via `rc.Param("name")`.      |
-| `Permission` | RBAC permission string the gateway checks.                            |
-| `Risk`       | `RiskSafe` / `RiskWrite` / `RiskDestructive` / `RiskPrivileged`.      |
-| `AuditEvent` | Name recorded in the audit log for this call.                         |
-| `Input`      | Optional `*Schema`; validated by the gateway before the handler runs. |
-| `Timeout`    | Optional per-request timeout.                                         |
-| `Handle`     | The handler (`func(*RequestContext) (any, error)`).                   |
-| `Stream`     | For `MethodWS` routes only - see [streaming.md](streaming.md).        |
+| Field        | Purpose                                                                               |
+| ------------ | ------------------------------------------------------------------------------------- |
+| `ID`         | Stable handle referenced by panels/actions/manifest.                                  |
+| `Method`     | `MethodGet`, `MethodPost`, `MethodPut`, `MethodPatch`, `MethodDelete`, or `MethodWS`. |
+| `Path`       | Route path; `{name}` placeholders arrive via `rc.Param("name")`.                      |
+| `Permission` | RBAC permission string the gateway checks.                                            |
+| `Risk`       | `RiskSafe` / `RiskWrite` / `RiskDestructive` / `RiskPrivileged`.                      |
+| `AuditEvent` | Name recorded in the audit log for this call.                                         |
+| `Input`      | Optional `*Schema`; validated by the gateway before the handler runs.                 |
+| `Timeout`    | Optional per-request timeout.                                                         |
+| `Handle`     | The handler (`func(*RequestContext) (any, error)`).                                   |
+| `Stream`     | For `MethodWS` routes only - see [streaming.md](streaming.md).                        |
 
 Route IDs are scoped by plugin name. If your manifest `Name` is `starter`, every
 route ID must begin with `starter.`. The gateway validates this during
@@ -82,6 +82,9 @@ cookies, or auth - that's all gateway-side.
 - `rc.Param("name")` - a path placeholder or renderer-supplied param.
 - `rc.Query()` - raw query values.
 - `rc.Page()` - parsed cursor/limit/filter/sort for list routes.
+- `rc.Uploads("field")` - uploaded multipart files for `FieldFile` inputs.
+- `rc.Storage` - scoped plugin-owned persistence; see [storage.md](storage.md).
+- `rc.ProxyURL(...)` / `rc.ProxyPrefix()` - proxy URLs for `HTTPProxy` sessions.
 - `rc.Audit(result, params, err)` - record an operation inside a long-lived
   route (see [streaming.md](streaming.md)).
 
@@ -145,10 +148,12 @@ with `rc.Uploads("field")`. To stream a download back, return a
 `*plugin.Download` (set exactly one of `Body`, `Seeker`, or `OpenRange`; `Seeker`
 gives the client range requests for free). Most plugins need neither.
 
-## Snippets (saved commands)
+## Saved commands, queries, and templates
 
-The gateway offers a generic, user-owned store of saved commands/queries, scoped
-per protocol. A handler reaches it through `rc.Snippets`, a `plugin.SnippetStore`
-(`Create`/`Get`/`ListByOwner`/`Update`/`Delete` over `plugin.Snippet`). Scope by
-`rc.User.ID` and your plugin `Name`. The SSH plugin uses this for saved shell
-snippets. It's optional - ignore it if your protocol has no such concept.
+There is no separate snippets API. Use the generic `rc.Storage` surface for
+saved commands, saved queries, request templates, editor drafts, and per-plugin
+preferences. If a plugin wants a domain-specific helper such as a snippet store,
+build it as a small typed wrapper over `plugin.Storage` rather than adding a new
+storage path.
+
+See [storage.md](storage.md) for scopes, examples, conflict behavior, and tests.

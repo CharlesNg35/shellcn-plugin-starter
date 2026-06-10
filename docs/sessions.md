@@ -52,11 +52,18 @@ type ConnectConfig struct {
     Transport    Transport       // "direct" or "agent"
     Config       map[string]any  // decrypted form values
     Net          NetTransport    // reach the target through here
+    Storage      Storage         // plugin-owned scoped persistence
 }
 ```
 
 Read config values with the typed helpers: `cfg.String("host")`,
 `cfg.Int("port")`. Secret fields are already decrypted.
+
+`Storage` is the same scoped plugin storage surface exposed as `rc.Storage` in
+route handlers. Prefer `rc.Storage` for request-driven saved objects because it
+uses the current request context and is easier to test. Keep `cfg.Storage` for
+session-level helpers that genuinely need storage outside one route handler.
+See [storage.md](storage.md).
 
 ## Reaching the target: `cfg.Net`
 

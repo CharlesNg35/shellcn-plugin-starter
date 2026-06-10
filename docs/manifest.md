@@ -131,8 +131,7 @@ chosen **transport** or the protocol: `SchemaContextTransport` (`$transport`) an
 
 **Transport-conditional fields.** This is the most common use: when a connection
 runs through an agent, the agent supplies the endpoint, so the host/port/socket
-fields should disappear. Define a condition once and reuse it across fields (this
-is exactly how the built-in `docker` plugin does it):
+fields should disappear. Define a condition once and reuse it across fields:
 
 ```go
 func configSchema() plugin.Schema {
@@ -224,15 +223,15 @@ which you read with `cfg.CredentialSecretFor(...)` (see
 
 ### Choosing a layout by protocol shape
 
-Pick the layout from how your protocol is navigated, not from its category. The
-built-ins map cleanly onto four shapes:
+Pick the layout from how your protocol is navigated, not from its category. Most
+plugins map cleanly onto four shapes:
 
-| Your protocol is...                                                        | Layout              | Typical panels                                                      | Built-ins                                      |
-| -------------------------------------------------------------------------- | ------------------- | ------------------------------------------------------------------- | ---------------------------------------------- |
-| **One screen** (a terminal workspace, file tree, or desktop)               | `LayoutSingle`      | one `PanelTerminalGrid` / `PanelFileBrowser` / `PanelRemoteDesktop` | ssh, sftp, ftp, smb, vnc, rdp, telnet          |
-| **A few flat views** (terminal + files, or browse + admin)                 | `LayoutTabs`        | a handful of `Tabs`                                                 | ssh, s3, minio, redis                          |
-| **A big hierarchy** (databases→tables, namespaces→pods, topics→partitions) | `LayoutSidebarTree` | `Tree` + `Resources` with `DetailView`s                             | postgresql, mongodb, docker, kubernetes, kafka |
-| **An at-a-glance board** (several charts/tables at once)                   | `LayoutDashboard`   | `Tabs` as dashboard cells                                           | (dashboard-style monitors)                     |
+| Your protocol is...                                                        | Layout              | Typical panels                                                      |
+| -------------------------------------------------------------------------- | ------------------- | ------------------------------------------------------------------- |
+| **One screen** (a terminal workspace, file tree, or desktop)               | `LayoutSingle`      | one `PanelTerminalGrid` / `PanelFileBrowser` / `PanelRemoteDesktop` |
+| **A few flat views** (terminal + files, or browse + admin)                 | `LayoutTabs`        | a handful of `Tabs`                                                 |
+| **A big hierarchy** (databases->tables, namespaces->pods, topics->partitions) | `LayoutSidebarTree` | `Tree` + `Resources` with `DetailView`s                             |
+| **An at-a-glance board** (several charts/tables at once)                   | `LayoutDashboard`   | `Tabs` as dashboard cells                                           |
 
 Rules of thumb:
 
@@ -300,13 +299,13 @@ Tabs: []plugin.Panel{{
 | `PanelSplit`         | `SplitConfig`         | Resizable child panel composition. |
 | `PanelCanvas`        | `CanvasConfig`        | Plugin-driven canvas draw/input.   |
 | `PanelWasm`          | `WasmConfig`          | A sandboxed WebAssembly app.       |
-| `PanelEnroll`        | -                     | The agent-enrollment screen.       |
+| `PanelEnroll`        | -                     | Core-owned agent enrollment screen. |
 
-`TableConfig` is documented in depth below; the other `*Config` structs follow
-the same idea (they mostly name the route IDs the panel calls and a few display
-options). Their fields are small and self-describing in the SDK types - check the
-`plugin` package godoc and the matching built-in (e.g. `plugins/prometheus` for
-`MetricsConfig`, `plugins/postgresql` for `QueryEditorConfig`) for a live example.
+Each panel has a dedicated route and payload contract in the
+[panel reference](panels/README.md). Start there before choosing a panel. The
+SDK types are still the source of truth for field names, but the panel docs
+explain which route method to use, what the route should return, and common
+mistakes.
 
 Use the most structured panel that fits the data:
 
@@ -330,6 +329,11 @@ Use the most structured panel that fits the data:
 - Use `PanelSplit` to compose generic panels side by side, such as table +
   details, editor + preview, or logs + terminal. Do not create plugin-specific
   layouts for those cases.
+- `PanelEnroll` is core-owned for agent-mode connection setup. Do not normally
+  add it to a plugin manifest. Declare `SupportedTransports` plus
+  `AgentProfile.Install` and let the workspace render enrollment when the agent
+  tunnel is offline; see [panels/enroll.md](panels/enroll.md) and
+  [agents.md](agents.md).
 - Use `PanelCanvas` for custom visual or game-like tools that genuinely need a
   plugin-controlled drawing surface: topology maps with custom interaction,
   simulators, whiteboard-like tools, visual debuggers, or games. The plugin sends
@@ -445,8 +449,8 @@ plugin.TableConfig{
 
 For an **editable grid**, set `Editable: true`, name the primary-key column(s) in
 `RowKey`, and point `Insert`/`Update`/`Delete` at mutation routes; the gateway
-sends each edited row as JSON to those routes. The `plugins/postgresql` and
-`plugins/docker` built-ins are full working examples.
+sends each edited row as JSON to those routes. Mutation handlers must revalidate
+table names, primary keys, writable columns, and backend permissions server-side.
 
 ## Actions
 
@@ -493,7 +497,8 @@ how the container/k8s-style plugins build deep navigation - all declarative.
 injected into every read/stream route's params. Each `ScopeFilter` has a
 `Param`, `Label`, a `Control` (`ScopeSelect`, `ScopeMultiSelect`, `ScopeSearch`,
 `ScopeToggle`), and either static `Options` or an `OptionsSource`. Read the
-chosen value(s) in a handler with `rc.Param("<param>")` / `rc.ParamList`.
+chosen value in a handler with `rc.Param("<param>")`; for multi-select scopes,
+use `rc.ParamList("<param>", plugin.ScopeSeparator)`.
 
 ## Transports
 
