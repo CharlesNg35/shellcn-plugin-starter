@@ -9,8 +9,8 @@ Plugins only need to handle theme explicitly when they draw or render their own
 surface:
 
 - `PanelCanvas`: the stream receives `theme` in ready/resize events.
-- `PanelWasm`: the sandbox receives `window.shellcn.theme` and live
-  `window.shellcn.onTheme` updates.
+- `PanelWasm`: the sandbox receives `window.shellcn.theme`,
+  `window.shellcn.colors`, and live `window.shellcn.onTheme` updates.
 - `PanelTerminal`: resize/control frames include `theme` for terminal programs
   that can adapt colors.
 
@@ -86,12 +86,14 @@ stream is open. Redraw on the next dirty frame.
 
 ## WASM theme
 
-WASM panels get the current theme through the bridge:
+WASM panels get the current theme and ShellCN color tokens through the bridge:
 
 ```js
 const initialTheme = window.shellcn.theme; // "light" or "dark"
-const unsubscribe = window.shellcn.onTheme((theme) => {
+const initialColors = window.shellcn.colors;
+const unsubscribe = window.shellcn.onTheme((theme, colors) => {
   document.body.dataset.theme = theme;
+  document.documentElement.style.setProperty("--accent", colors.primary500);
 });
 ```
 
@@ -99,8 +101,13 @@ Apply it before first paint when possible:
 
 ```js
 document.body.dataset.theme = window.shellcn.theme || "dark";
-window.shellcn.onTheme((theme) => {
+document.documentElement.style.setProperty(
+  "--accent",
+  window.shellcn.colors?.primary500 || "#38bdf8",
+);
+window.shellcn.onTheme((theme, colors) => {
   document.body.dataset.theme = theme;
+  document.documentElement.style.setProperty("--accent", colors.primary500);
 });
 ```
 
@@ -128,6 +135,7 @@ body[data-theme="light"] {
 
 Keep the WASM app self-contained. It cannot read ShellCN Tailwind classes or
 parent CSS variables directly because it runs inside a sandboxed iframe.
+Use `window.shellcn.colors` for ShellCN primary and surface tokens.
 
 ## Terminal theme
 
@@ -148,7 +156,7 @@ remote PTYs do not need this; xterm itself is already themed by the core.
 ## Testing checklist
 
 - Canvas scenes update colors after a `ResizeEvent` with a different theme.
-- WASM apps apply `window.shellcn.theme` before first paint and react to
-  `onTheme`.
+- WASM apps apply `window.shellcn.theme` and `window.shellcn.colors` before first
+  paint and react to `onTheme(theme, colors)`.
 - Theme-dependent colors have contrast in both light and dark modes.
 - Theme changes do not change route behavior, storage keys, or authorization.

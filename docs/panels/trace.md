@@ -7,7 +7,7 @@ for observability plugins such as Jaeger, Tempo, or OpenTelemetry backends.
 plugin.Panel{
     Key: "trace", Label: "Trace", Icon: icon("route"),
     Type:   plugin.PanelTrace,
-    Source: &plugin.DataSource{RouteID: "demo.trace.read", Params: map[string]string{"id": "${resource.uid}"}},
+    Source: &plugin.DataSource{RouteID: "myplugin.trace.read", Params: map[string]string{"id": "${resource.uid}"}},
     Config: plugin.TraceConfig{ServiceField: "service"},
 }
 ```

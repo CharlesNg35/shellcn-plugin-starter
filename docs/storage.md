@@ -258,9 +258,9 @@ Use a destructive route risk for user-visible deletes:
 
 ```go
 plugin.Route{
-    ID: "demo.query.delete", Method: plugin.MethodDelete, Path: "/queries/{id}",
-    Permission: "demo.query.delete", Risk: plugin.RiskDestructive,
-    AuditEvent: "demo.query.delete", Handle: deleteQuery,
+    ID: "myplugin.query.delete", Method: plugin.MethodDelete, Path: "/queries/{id}",
+    Permission: "myplugin.query.delete", Risk: plugin.RiskDestructive,
+    AuditEvent: "myplugin.query.delete", Handle: deleteQuery,
 }
 ```
 
@@ -293,7 +293,7 @@ func listTodos(rc *plugin.RequestContext) (any, error) {
 }
 ```
 
-The WASM side calls `demo.todos.list` through the declared bridge. The route
+The WASM side calls `myplugin.todos.list` through the declared bridge. The route
 handler owns validation, storage scope, and response shape. This keeps the WASM
 app isolated from ShellCN internals while preserving the same authorization,
 audit, and storage rules as every other panel.

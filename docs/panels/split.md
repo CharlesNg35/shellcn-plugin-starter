@@ -11,10 +11,10 @@ plugin.Panel{
         Orientation: plugin.SplitHorizontal,
         Panels: []plugin.SplitPanel{
             {Panel: plugin.Panel{Key: "list", Type: plugin.PanelTable,
-                Source: &plugin.DataSource{RouteID: "demo.items.list"},
+                Source: &plugin.DataSource{RouteID: "myplugin.items.list"},
                 Config: plugin.TableConfig{Columns: columns()}}, Size: 40, MinSize: 25},
             {Panel: plugin.Panel{Key: "details", Type: plugin.PanelObjectDetail,
-                Source: &plugin.DataSource{RouteID: "demo.item.read"},
+                Source: &plugin.DataSource{RouteID: "myplugin.item.read"},
                 Config: plugin.ObjectDetailConfig{RawToggle: true}}, Size: 60},
         },
     },

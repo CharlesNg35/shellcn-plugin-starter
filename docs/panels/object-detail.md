@@ -8,7 +8,7 @@ dumping raw JSON into `PanelDocument`.
 plugin.Panel{
     Key: "overview", Label: "Overview", Icon: icon("info"),
     Type:   plugin.PanelObjectDetail,
-    Source: &plugin.DataSource{RouteID: "demo.item.read", Params: map[string]string{"id": "${resource.uid}"}},
+    Source: &plugin.DataSource{RouteID: "myplugin.item.read", Params: map[string]string{"id": "${resource.uid}"}},
     Config: plugin.ObjectDetailConfig{
         Sections: []plugin.ObjectDetailSection{{
             Title: "Identity",

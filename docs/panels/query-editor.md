@@ -11,7 +11,7 @@ plugin.Panel{
     Icon:  plugin.Icon{Type: plugin.IconLucide, Value: "square-terminal"},
     Type:  plugin.PanelQueryEditor,
     Source: &plugin.DataSource{
-        RouteID: "demo.query",
+        RouteID: "myplugin.query",
         Method:  plugin.MethodWS,
     },
     Config: plugin.QueryEditorConfig{
@@ -160,7 +160,7 @@ only when the backend supports cancellation safely.
 ```go
 Config: plugin.QueryEditorConfig{
     Language:      "sql",
-    CancelRouteID: "demo.query.cancel",
+    CancelRouteID: "myplugin.query.cancel",
     CancelParams:  map[string]string{"database": "${resource.uid}"},
 }
 ```
@@ -171,7 +171,7 @@ the active database, namespace, index, or resource with params.
 ```go
 Config: plugin.QueryEditorConfig{
     Language:          "surrealql",
-    CompletionRouteID: "demo.query.complete",
+    CompletionRouteID: "myplugin.query.complete",
     CompletionParams:  map[string]string{"database": "${resource.uid}"},
 }
 ```
@@ -186,14 +186,14 @@ WASM bridge.
 
 ```go
 plugin.Route{
-    ID: "demo.queries.list", Method: plugin.MethodGet, Path: "/queries",
-    Permission: "demo.query.read", Risk: plugin.RiskSafe,
-    AuditEvent: "demo.queries.list", Handle: listSavedQueries,
+    ID: "myplugin.queries.list", Method: plugin.MethodGet, Path: "/queries",
+    Permission: "myplugin.query.read", Risk: plugin.RiskSafe,
+    AuditEvent: "myplugin.queries.list", Handle: listSavedQueries,
 }
 plugin.Route{
-    ID: "demo.queries.save", Method: plugin.MethodPost, Path: "/queries",
-    Permission: "demo.query.write", Risk: plugin.RiskWrite,
-    AuditEvent: "demo.queries.save", Handle: saveQuery,
+    ID: "myplugin.queries.save", Method: plugin.MethodPost, Path: "/queries",
+    Permission: "myplugin.query.write", Risk: plugin.RiskWrite,
+    AuditEvent: "myplugin.queries.save", Handle: saveQuery,
 }
 ```
 

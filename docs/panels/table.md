@@ -9,7 +9,7 @@ plugin.Panel{
     Label: "Items",
     Icon:  plugin.Icon{Type: plugin.IconLucide, Value: "table"},
     Type:  plugin.PanelTable,
-    Source: &plugin.DataSource{RouteID: "demo.items.list"},
+    Source: &plugin.DataSource{RouteID: "myplugin.items.list"},
     Config: plugin.TableConfig{
         Columns: []plugin.Column{
             {Key: "name", Label: "Name", Sortable: true},
@@ -79,7 +79,7 @@ collections.
 ```go
 plugin.TableConfig{
     ColumnsSource: &plugin.DataSource{
-        RouteID: "demo.table.columns",
+        RouteID: "myplugin.table.columns",
         Params:  map[string]string{"table": "${resource.uid}"},
     },
 }
@@ -110,8 +110,8 @@ selection.
 
 ```go
 plugin.TableConfig{
-    ActionIDs:    []string{"demo.refresh", "demo.create"},
-    RowActionIDs: []string{"demo.restart", "demo.delete"},
+    ActionIDs:    []string{"myplugin.refresh", "myplugin.create"},
+    RowActionIDs: []string{"myplugin.restart", "myplugin.delete"},
     Selectable:   true,
 }
 ```
@@ -143,21 +143,21 @@ plugin.TableConfig{
     StagedEdits: true,
     RowKey:      []string{"id"},
     ColumnsSource: &plugin.DataSource{
-        RouteID: "demo.columns",
+        RouteID: "myplugin.columns",
         Params:  map[string]string{"table": "${resource.uid}"},
     },
     Insert: &plugin.DataSource{
-        RouteID: "demo.row.insert",
+        RouteID: "myplugin.row.insert",
         Method:  plugin.MethodPost,
         Params:  map[string]string{"table": "${resource.uid}"},
     },
     Update: &plugin.DataSource{
-        RouteID: "demo.row.update",
+        RouteID: "myplugin.row.update",
         Method:  plugin.MethodPut,
         Params:  map[string]string{"table": "${resource.uid}"},
     },
     Delete: &plugin.DataSource{
-        RouteID: "demo.row.delete",
+        RouteID: "myplugin.row.delete",
         Method:  plugin.MethodDelete,
         Params:  map[string]string{"table": "${resource.uid}"},
     },
@@ -179,7 +179,7 @@ full refetch is cheaper and simpler than event diffs.
 ```go
 plugin.TableConfig{
     Watch: &plugin.DataSource{
-        RouteID: "demo.items.watch",
+        RouteID: "myplugin.items.watch",
         Method:  plugin.MethodWS,
     },
 }

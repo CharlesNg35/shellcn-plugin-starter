@@ -13,7 +13,7 @@ plugin.Panel{
     Label:  "Main",
     Icon:   icon("table"),
     Type:   plugin.PanelTable,
-    Source: &plugin.DataSource{RouteID: "demo.list"},
+    Source: &plugin.DataSource{RouteID: "myplugin.list"},
     Config: plugin.TableConfig{Columns: columns()},
 }
 ```
@@ -21,6 +21,10 @@ plugin.Panel{
 `Source.RouteID` references one of your `Routes()`. `Source.Params` may use
 resource interpolation such as `${resource.uid}`, `${resource.name}`,
 `${resource.namespace}`, and `${resource.scope}` inside resource detail tabs.
+The `myplugin.*` route IDs in these panel examples assume a plugin with
+`Manifest.Name: "myplugin"`. Replace the prefix with your plugin's actual
+`Manifest.Name`; the SDK validator enforces that route IDs start with
+`Manifest.Name + "."`.
 
 ## Choose the standard panel first
 

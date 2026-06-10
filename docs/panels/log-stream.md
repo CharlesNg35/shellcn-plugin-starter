@@ -4,11 +4,11 @@ Use `PanelLogStream` for live text output: container logs, pod logs, daemon logs
 tailing files, broker consumer output, or process stdout.
 
 ```go
-Streams: []plugin.Stream{{ID: "demo.logs", Kind: plugin.StreamLogs, RouteID: "demo.logs"}},
+Streams: []plugin.Stream{{ID: "myplugin.logs", Kind: plugin.StreamLogs, RouteID: "myplugin.logs"}},
 plugin.Panel{
     Key: "logs", Label: "Logs", Icon: icon("scroll-text"),
     Type:   plugin.PanelLogStream,
-    Source: &plugin.DataSource{RouteID: "demo.logs", Method: plugin.MethodWS, Params: map[string]string{"tail": "200"}},
+    Source: &plugin.DataSource{RouteID: "myplugin.logs", Method: plugin.MethodWS, Params: map[string]string{"tail": "200"}},
 }
 ```
 

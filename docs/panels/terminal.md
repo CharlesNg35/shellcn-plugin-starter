@@ -4,11 +4,11 @@ Use `PanelTerminal` for one interactive terminal, shell, exec session, or consol
 stream. The panel uses xterm.js and binds to a `StreamTerminal` route.
 
 ```go
-Streams: []plugin.Stream{{ID: "demo.shell", Kind: plugin.StreamTerminal, RouteID: "demo.shell"}},
+Streams: []plugin.Stream{{ID: "myplugin.shell", Kind: plugin.StreamTerminal, RouteID: "myplugin.shell"}},
 Tabs: []plugin.Panel{{
     Key: "shell", Label: "Shell", Icon: icon("terminal"),
     Type:   plugin.PanelTerminal,
-    Source: &plugin.DataSource{RouteID: "demo.shell", Method: plugin.MethodWS, Params: map[string]string{"cols": "80", "rows": "24"}},
+    Source: &plugin.DataSource{RouteID: "myplugin.shell", Method: plugin.MethodWS, Params: map[string]string{"cols": "80", "rows": "24"}},
     Config: plugin.TerminalConfig{Zoom: true, Search: true},
 }}
 ```

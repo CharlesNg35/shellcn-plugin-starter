@@ -1,13 +1,14 @@
 # Best practices
 
-These conventions are distilled from ShellCN's 40 built-in plugins, which use
-the **same SDK** an external plugin does. Following them keeps your plugin
-idiomatic, reviewable, and consistent with the rest of the catalog.
+These conventions keep a ShellCN plugin idiomatic, reviewable, and consistent
+with the renderer and gateway contracts. They are written for external plugin
+authors: depend on the SDK, keep behavior manifest-driven, and avoid assumptions
+about gateway internals.
 
 ## Project layout
 
-The plugin is a normal Go program; split it the way the built-ins do rather than
-one big file:
+The plugin is a normal Go program. Start small, then split by responsibility as
+the protocol grows:
 
 | File          | Holds                                                       |
 | ------------- | ----------------------------------------------------------- |
@@ -16,16 +17,15 @@ one big file:
 | `session.go`  | The `Session` struct, its methods, and the route handlers.  |
 | `config.go`   | The `Schema` and option parsing/validation (once it grows). |
 
-Built-ins range from a single ~60-line file (`plugins/s3`) to a directory of
-domain files (`plugins/kubernetes`). Start small; split by concern as it grows.
-Keep manifest helpers (`icon()`, schema builders) as package functions right
-after `Manifest()`.
+Keep manifest helpers (`icon()`, schema builders, column definitions, action
+lists) as package functions near `Manifest()` until they are large enough to
+deserve their own file.
 
 ## The plugin is a stateless singleton
 
-The built-ins expose `func New() *Plugin` returning a zero-value struct and put
-**all** state in the `Session`. One plugin value serves every connection
-concurrently, so it must hold no per-connection data.
+Expose a zero-value plugin type and put **all** per-connection state in the
+`Session`. One plugin value serves every connection concurrently, so it must hold
+no per-connection data.
 
 ```go
 type Plugin struct{}
@@ -40,28 +40,34 @@ and keep the plugin field-free.)
 
 The catalog is consistent because everyone follows the same scheme:
 
-- **Plugin `Name`** - lowercase, short, stable (`postgresql`, `ssh`, `kubernetes`).
+- **Plugin `Name`** - lowercase, short, stable (`mydb`, `myssh`, `mycluster`).
   It must match `[a-z][a-z0-9_-]*`; no dots, spaces, slashes, uppercase, or
   leading digits. Never change it after release; it's stored on every connection.
-- **Route `ID`** - `"{name}.{entity}.{action}"` (`postgresql.table.row.insert`,
-  `ssh.shell`, `docker.container.logs`).
-- **`Permission`** - `"{name}.{resource}.{verb}"` (`docker.containers.read`,
-  `redis.keys.delete`).
+- **Route `ID`** - `"{name}.{entity}.{action}"` (`mydb.table.row.insert`,
+  `myssh.shell`, `myruntime.container.logs`).
+- **`Permission`** - `"{name}.{resource}.{verb}"` (`myruntime.containers.read`,
+  `mycache.keys.delete`).
 - **`AuditEvent`** - set it equal to the route `ID`, so the audit log filters by
   operation cleanly.
 - **`Risk`** - `RiskSafe` for reads, `RiskWrite` for create/update,
   `RiskDestructive` for delete/truncate, `RiskPrivileged` for shell/exec/raw
   socket. The gateway enforces it; be honest.
 
+The prefix is not cosmetic. The SDK validator rejects any route whose `ID` does
+not start with `Manifest.Name + "."`. If your plugin name is `myplugin`, route
+IDs must look like `myplugin.list`, `myplugin.entry.create`, and
+`myplugin.shell`.
+
 ## Connect: eager validate, lazy sub-clients
 
-Two patterns, both used in-tree:
+Two patterns are useful:
 
-- **Eager** (Redis, MongoDB): open the client in `Connect`, then call your own
-  `HealthCheck` and return the error if it fails - the user gets an immediate,
+- **Eager**: open the main client in `Connect`, then call your own
+  `HealthCheck` and return the error if it fails. The user gets an immediate,
   clear connect error.
-- **Lazy** (PostgreSQL opens a pool per database on demand): store `cfg` and
-  `cfg.Net`, then open sub-clients on first use behind a mutex.
+- **Lazy**: store the parsed config and `cfg.Net`, then open sub-clients on
+  first use behind a mutex. Use this when a connection can target many databases,
+  namespaces, projects, or child endpoints.
 
 ```go
 func (s *session) clientFor(ctx context.Context, name string) (*Client, error) {
@@ -109,9 +115,9 @@ if !ok {
 client := &http.Client{Transport: rt} // requests go to base + path
 ```
 
-Some SDKs only accept a `DialContext` (not a RoundTripper) - wire
-`cfg.Net.DialContext` into their `http.Transport{DialContext: ...}`. That's how
-the Prometheus/Elasticsearch/S3 built-ins do L7.
+Some SDKs only accept a `DialContext` instead of a `RoundTripper`. In that case,
+build an `http.Transport{DialContext: cfg.Net.DialContext}` and give that
+transport to the SDK's HTTP client.
 
 ## Credentials: read the resolved secret, never store one
 
@@ -262,8 +268,8 @@ databases, schemas, columns, namespaces, containers, or buckets.
 The manifest UX linter enforces the same idea at release time:
 
 - Route IDs must be owned by the plugin namespace. If the plugin is named
-  `starter`, use IDs such as `starter.list`, `starter.entry.create`, and
-  `starter.events`; never borrow another plugin's prefix or use unprefixed IDs.
+  `myplugin`, use IDs such as `myplugin.list`, `myplugin.entry.create`, and
+  `myplugin.events`; never borrow another plugin's prefix or use unprefixed IDs.
 - Destructive and privileged actions must set `Confirm` with consequence-focused
   `ConfirmText`.
 - `OpenDock` is for long-lived interactive panels only: terminal, desktop, logs,
@@ -383,8 +389,9 @@ expects to inspect and act on that target:
   callable route or stream in `WasmConfig.Bridge`. The app receives
   `window.shellcn.route`, `window.shellcn.stream`, and `window.shellcn.asset`
   inside a sandboxed iframe; undeclared access is rejected by the renderer. Do
-  read `window.shellcn.theme` and subscribe with `window.shellcn.onTheme(fn)` so
-  custom rendering respects light and dark mode. Do not use WASM as a shortcut
+  read `window.shellcn.theme` and `window.shellcn.colors`, then subscribe with
+  `window.shellcn.onTheme(fn)` so custom rendering respects light and dark mode.
+  Do not use WASM as a shortcut
   around `PanelTable`, `PanelForm`,
   `PanelObjectDetail`, `PanelTimeline`, `PanelGraph`, or `PanelCanvas`.
 - For generic WASM toolchains, expect a small JavaScript loader. Rust frameworks
@@ -445,11 +452,12 @@ term := req.Search() // the grid's free-text box ("q")
 return plugin.Page[Row]{Items: rows, NextCursor: next, Total: &total}, nil
 ```
 
-Encode an opaque cursor (the built-ins base64 an offset). `rc.Page()` already
-clamps the limit to `MaxPageLimit`, so don't dump unbounded result sets.
+Encode an opaque cursor, for example a base64-encoded offset or backend cursor.
+`rc.Page()` already clamps the limit to `MaxPageLimit`, so do not dump unbounded
+result sets.
 
-When the data is **already in memory** (a fixed list you fetched whole), don't
-hand-roll filter/sort/paging - the SDK has the primitives the built-ins use:
+When the data is **already in memory** (a fixed list you fetched whole), do not
+hand-roll filter/sort/paging. The SDK has generic helpers:
 `plugin.FilterRows(rows, req.Search())` for the free-text box and
 `plugin.SortRows(rows, req.Sort)` for the column sort, then slice by the cursor.
 A handful of generic helpers cover most list handlers; reach for them before
@@ -457,15 +465,14 @@ writing your own loop.
 
 ## Many object types? Parameterize routes by kind
 
-If your protocol has dozens of object types (kubernetes has pods, deployments,
-services, ...), don't write near-identical routes for each. Declare **one** set of
-routes keyed by a `{kind}` path param, and resolve it against a catalog in the
-handler:
+If your protocol has many object types, do not write near-identical routes for
+each. Declare **one** set of routes keyed by a `{kind}` path param, and resolve
+it against a catalog in the handler:
 
 ```go
-{ID: "k8s.resource.list",   Method: plugin.MethodGet,    Path: "/resources/{kind}",        Handle: ListResource},
-{ID: "k8s.resource.delete", Method: plugin.MethodDelete, Path: "/resources/{kind}/delete", Handle: DeleteResource},
-{ID: "k8s.resource.watch",  Method: plugin.MethodWS,     Path: "/resources/{kind}/watch",  Stream: WatchResource},
+{ID: "myplugin.resource.list",   Method: plugin.MethodGet,    Path: "/resources/{kind}",        Handle: ListResource},
+{ID: "myplugin.resource.delete", Method: plugin.MethodDelete, Path: "/resources/{kind}/delete", Handle: DeleteResource},
+{ID: "myplugin.resource.watch",  Method: plugin.MethodWS,     Path: "/resources/{kind}/watch",  Stream: WatchResource},
 
 func ListResource(rc *plugin.RequestContext) (any, error) {
     k, err := resolveKind(s, rc.Param("kind")) // look up in a catalog (+ runtime CRDs)
@@ -476,10 +483,9 @@ func ListResource(rc *plugin.RequestContext) (any, error) {
 }
 ```
 
-Kubernetes serves its whole catalog (plus runtime CRDs) from ~6 routes this way.
-Keep the catalog (kind -> columns, actions, detail tabs) as data, so adding a kind
-is a data change, not new routes. Permissions still apply per-route, so group
-kinds that share a risk level.
+Keep the catalog (kind -> columns, actions, detail tabs) as data, so adding a
+kind is a data change, not new routes. Permissions still apply per-route, so
+group kinds that share a risk level.
 
 ## Streaming: declare the right kind, watch the client, tear down
 
@@ -614,6 +620,5 @@ release.
 - Don't block a stream without watching `client.Context().Done()`.
 - Don't import `github.com/charlesng35/shellcn/internal/...` or assume the
   gateway's `plugins/shared/...` packages are yours - depend only on the **SDK**.
-  The shared packages are the gateway's own reference implementations; read them
-  for patterns, but copy what you need into your plugin.
+  If you need a helper, implement it in your plugin or use a public dependency.
 - Don't change `Manifest.Name` after release - connections are keyed by it.

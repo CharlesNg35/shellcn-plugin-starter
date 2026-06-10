@@ -7,11 +7,11 @@ cluster upgrades, index rebuilds, migrations, and bulk deletes.
 plugin.Panel{
     Key: "task", Label: "Task", Icon: icon("loader"),
     Type:   plugin.PanelTaskProgress,
-    Source: &plugin.DataSource{RouteID: "demo.task.watch", Method: plugin.MethodWS, Params: map[string]string{"id": "${resource.uid}"}},
+    Source: &plugin.DataSource{RouteID: "myplugin.task.watch", Method: plugin.MethodWS, Params: map[string]string{"id": "${resource.uid}"}},
     Config: plugin.TaskProgressConfig{
         Title:         "Import",
-        CancelRouteID: "demo.task.cancel",
-        RetryRouteID:  "demo.task.retry",
+        CancelRouteID: "myplugin.task.cancel",
+        RetryRouteID:  "myplugin.task.retry",
     },
 }
 ```
@@ -19,7 +19,7 @@ plugin.Panel{
 Declare the watch route in `Streams()`:
 
 ```go
-plugin.Stream{ID: "demo.task.watch", Kind: plugin.StreamTask, RouteID: "demo.task.watch"}
+plugin.Stream{ID: "myplugin.task.watch", Kind: plugin.StreamTask, RouteID: "myplugin.task.watch"}
 ```
 
 The source route is `MethodWS` and streams task status/progress frames as JSON.

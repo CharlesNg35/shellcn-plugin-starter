@@ -2,10 +2,9 @@
 
 Most non-trivial plugins are **explorers**: a tree of things on the left
 (databases, namespaces, topics), a list in the middle, and a detail view on
-click. Databases add a query editor and editable grids. This chapter collects
-the patterns the built-ins use for that shape (postgresql, mongodb, docker,
-kubernetes, redis). The field reference for each type is in
-[manifest.md](manifest.md); this is how to put them together well.
+click. Databases add a query editor and editable grids. This chapter explains
+the manifest patterns for that shape. The field reference for each type is in
+[manifest.md](manifest.md).
 
 The frame is always:
 
@@ -20,17 +19,17 @@ Scope:     []plugin.ScopeFilter{ /* global selectors injected into reads */ },
 
 The sidebar is built from `TreeGroup` roots that **expand on demand** - you never
 ship the whole tree, you serve each level from a route as the user opens it. This
-is how proxmox does cluster -> node -> guest and kubernetes does category ->
-namespace -> object without loading everything up front.
+keeps first paint bounded for deep hierarchies such as cluster -> node -> guest
+or category -> namespace -> object.
 
 ```go
 // Roots (manifest). Source provides the first level; ResourceKind says what a
 // node opens into.
 Tree: []plugin.TreeGroup{
     {Key: "nodes", Label: "Nodes", Icon: icon("server"),
-     Source: plugin.DataSource{RouteID: "proxmox.tree.nodes"}, ResourceKind: "node"},
+     Source: plugin.DataSource{RouteID: "myplugin.tree.nodes"}, ResourceKind: "node"},
     {Key: "storage", Label: "Storage", Icon: icon("database"),
-     Source: plugin.DataSource{RouteID: "proxmox.tree.storage"}, ResourceKind: "storage"},
+     Source: plugin.DataSource{RouteID: "myplugin.tree.storage"}, ResourceKind: "storage"},
 },
 ```
 
@@ -66,9 +65,9 @@ paginate, sort, filter, and stream. Never expand a collection's members into the
 tree as individual nodes - a namespace with 5,000 pods would build a 5,000-node
 tree the user has to scroll, with no paging and no search.
 
-Kubernetes does exactly this: `Workloads` expands to `Pods`, `Deployments`, ...
-and each of those is a leaf that opens the list view. The individual pods live in
-the list, never in the tree.
+For example, a `Workloads` branch can expand to `Pods`, `Deployments`, and other
+collections, and each of those should be a leaf that opens the list view. The
+individual items live in the list, never in the tree.
 
 ```go
 // A collection node: a leaf that opens the kind's LIST (not its members).
@@ -102,9 +101,9 @@ Detail: plugin.DetailView{
     },
     Tabs: []plugin.Panel{
         {Key: "overview", Label: "Overview", Type: plugin.PanelMetrics,
-         Source: &plugin.DataSource{RouteID: "proxmox.qemu.metrics", Method: plugin.MethodWS, Params: guestParams()}, Config: cpuMemMetrics()},
+         Source: &plugin.DataSource{RouteID: "myplugin.guest.metrics", Method: plugin.MethodWS, Params: guestParams()}, Config: cpuMemMetrics()},
         {Key: "console", Label: "Console", Type: plugin.PanelRemoteDesktop,
-         Source: &plugin.DataSource{RouteID: "proxmox.qemu.console", Method: plugin.MethodWS, Params: guestParams()},
+         Source: &plugin.DataSource{RouteID: "myplugin.guest.console", Method: plugin.MethodWS, Params: guestParams()},
          Config: plugin.RemoteDesktopConfig{Resize: true, Clipboard: true}},
     },
 }
@@ -122,23 +121,23 @@ route's params**, so you don't thread it through each panel by hand. Populate th
 choices from a route, and read the value in handlers with `rc.Param(...)`.
 
 ```go
-// redis: a "Database" picker (0-15) loaded from a route.
+// A "Database" picker (0-15) loaded from a route.
 func databaseScope() plugin.ScopeFilter {
     return plugin.ScopeFilter{
         Param:         "database",
         Label:         "Database",
         Icon:          icon("database"),
-        OptionsSource: &plugin.DataSource{RouteID: "redis.databases.list"},
+        OptionsSource: &plugin.DataSource{RouteID: "myplugin.databases.list"},
         ValueField:    "value", // which field of each option row is the value
         LabelField:    "label",
         DefaultValue:  "0",
     }
 }
 
-// kubernetes: a namespace picker with an "All namespaces" entry.
+// A namespace picker with an "All namespaces" entry.
 plugin.ScopeFilter{
     Param: "namespace", Label: "Namespace",
-    OptionsSource: &plugin.DataSource{RouteID: "kubernetes.resource.list",
+    OptionsSource: &plugin.DataSource{RouteID: "myplugin.resource.list",
         Params: map[string]string{"kind": "namespace"}},
     ValueField: "name",
     AllLabel:   "All namespaces", // empty value = no filter
@@ -149,10 +148,10 @@ In a handler: `rc.Param("namespace")`. For a multi-select scope, read it with
 `rc.ParamList("param", plugin.ScopeSeparator)`. `Control` picks the widget
 (`ScopeSelect` default, `ScopeMultiSelect`, `ScopeSearch`, `ScopeToggle`).
 
-Prefer a **narrow `DefaultValue`** so the first paint is bounded - redis opens on
-database `0`, not all 16. Only default to an "all" scope (via `AllLabel`) when the
-list behind it is paginated server-side and genuinely cheap to span; otherwise the
-opening view fetches everything at once.
+Prefer a **narrow `DefaultValue`** so the first paint is bounded, for example
+database `0` instead of all databases. Only default to an "all" scope (via
+`AllLabel`) when the list behind it is paginated server-side and genuinely cheap
+to span; otherwise the opening view fetches everything at once.
 
 ## Sortable columns - and sort on the server
 
@@ -212,9 +211,8 @@ Header: plugin.HeaderSpec{Title: "${resource.name}", StatusField: "state", Sever
 ```
 
 The colors are `SeveritySuccess`, `SeverityWarn`, `SeverityDanger`, `SeverityInfo`,
-and `SeveritySecondary`; an unmapped value renders neutral. The built-ins keep
-this map in a shared helper (docker's `StateSeverities()`) so list and detail can
-never drift apart.
+and `SeveritySecondary`; an unmapped value renders neutral. Keep this map in one
+helper so list and detail views cannot drift apart.
 
 Give every list and result panel a **meaningful empty state** with `EmptyText`
 rather than a blank grid - say what's absent or what to do next:
@@ -236,10 +234,10 @@ A `ResourceType` groups its actions by **where they render**:
 
 ```go
 Actions: plugin.ResourceActions{
-    Toolbar: []string{"docker.container.create", "docker.container.prune"}, // no row context
-    Row:     []string{"docker.container.remove"},                           // bulk over the selection
-    Detail:  []string{"docker.container.start", "docker.container.stop",    // the one open resource
-                      "docker.container.restart", "docker.container.remove"},
+    Toolbar: []string{"myplugin.container.create", "myplugin.container.prune"}, // no row context
+    Row:     []string{"myplugin.container.remove"},                             // bulk over the selection
+    Detail:  []string{"myplugin.container.start", "myplugin.container.stop",    // the one open resource
+                      "myplugin.container.restart", "myplugin.container.remove"},
 },
 ```
 
@@ -250,20 +248,20 @@ Actions: plugin.ResourceActions{
 - **`Detail`** - the per-item lifecycle/edit actions (start, stop, rename,
   delete) live in the open resource's detail header, **not** the row bar.
 
-The rule the built-ins follow: **bulk-destructive only in the row bar; everything
-single-item goes in the detail view.** It keeps the selection bar uncluttered and
-avoids two delete buttons. For a plain browse table (selection but no row bar),
-set `Selectable: true` on the `TableConfig`.
+The rule: **bulk-destructive only in the row bar; everything single-item goes in
+the detail view.** It keeps the selection bar uncluttered and avoids two delete
+buttons. For a plain browse table (selection but no row bar), set
+`Selectable: true` on the `TableConfig`.
 
 ## Guard and group actions
 
 An action is just a button wired to a route, but a few fields make it safe and
-usable. Proxmox's guest lifecycle is the reference:
+usable:
 
 ```go
 plugin.Action{
     ID: "act.qemu.stop", Label: "Stop", Icon: icon("square"),
-    RouteID:     "proxmox.qemu.stop",
+    RouteID:     "myplugin.guest.stop",
     Confirm:     true,                                   // ask before firing
     ConfirmText: "Force stop this guest? Unsaved state is lost.",
     EnabledWhen: &plugin.Condition{AllOf: []plugin.Rule{ // grey out unless it applies
@@ -296,10 +294,10 @@ plugin.TableConfig{
     Editable:      true,
     StagedEdits:   true, // batch edits until the user commits/discards
     Exportable:    true,
-    ColumnsSource: &plugin.DataSource{RouteID: "pg.table.columns", Params: tableParams()},
-    Insert:        &plugin.DataSource{RouteID: "pg.table.row.insert", Method: plugin.MethodPost,   Params: tableParams()},
-    Update:        &plugin.DataSource{RouteID: "pg.table.row.update", Method: plugin.MethodPatch,  Params: tableParams()},
-    Delete:        &plugin.DataSource{RouteID: "pg.table.row.delete", Method: plugin.MethodDelete, Params: tableParams()},
+    ColumnsSource: &plugin.DataSource{RouteID: "myplugin.table.columns", Params: tableParams()},
+    Insert:        &plugin.DataSource{RouteID: "myplugin.table.row.insert", Method: plugin.MethodPost,   Params: tableParams()},
+    Update:        &plugin.DataSource{RouteID: "myplugin.table.row.update", Method: plugin.MethodPatch,  Params: tableParams()},
+    Delete:        &plugin.DataSource{RouteID: "myplugin.table.row.delete", Method: plugin.MethodDelete, Params: tableParams()},
 }
 ```
 
@@ -308,10 +306,9 @@ Two things make editing work:
 - **`ColumnsSource`** - for tables whose columns are only known at runtime (a
   real DB table), return the column list from a route instead of hard-coding it.
 - **Row keys** - each row your list route returns must carry its primary-key
-  values so the grid can address it on update/delete. The postgres plugin tags
-  every row with its PK map (`attachRowKeys`); your update/delete handlers then
-  validate that key before mutating. Never trust a client-supplied row identity
-  blindly - re-check it against the real key.
+  values so the grid can address it on update/delete. Your update/delete handlers
+  then validate that key before mutating. Never trust a client-supplied row
+  identity blindly - re-check it against the real key.
 
 `${resource.scope}` / `${resource.namespace}` / `${resource.name}` in the params
 carry the selected database/schema/table down to every route.
@@ -326,8 +323,8 @@ plugin.QueryEditorConfig{
     ExecuteLabel:      "Run query",
     CancelLabel:       "Cancel query",
     EmptyText:         "Run a query to see results.",
-    CancelRouteID:     "pg.query.cancel",      // cancel a running statement
-    CompletionRouteID: "pg.query.complete",    // optional autocomplete
+    CancelRouteID:     "myplugin.query.cancel",      // cancel a running statement
+    CompletionRouteID: "myplugin.query.complete",    // optional autocomplete
     Exportable:        true,
 }
 ```
@@ -357,8 +354,8 @@ User input reaches your queries two ways, and they are handled differently:
   validate each against a strict whitelist and quote it.
 
 ```go
-// Identifier: validate (whitelist) then quote. The built-ins use
-// ^[A-Za-z_][A-Za-z0-9_]{0,62}$ and reject anything else.
+// Identifier: validate (whitelist) then quote. A common safe shape is
+// ^[A-Za-z_][A-Za-z0-9_]{0,62}$; reject anything else.
 col, err := safeIdentifier(req.Sort[0].Field)
 if err != nil {
     return nil, err
@@ -370,22 +367,20 @@ rows, err := db.QueryContext(ctx,
     `SELECT * FROM `+quoteIdent(table)+` WHERE status = $1 ORDER BY `+order, status)
 ```
 
-The built-in SQL plugins centralize this in a shared `sqldb` dialect
-(`SafeIdentifier`, `QuoteIdent`, and parameterized `Insert`/`Update`/`Delete`).
 The same split applies to any query language with identifiers (CQL, N1QL). Treat
 **every** name as untrusted - including a column the client got from your own
 `ColumnsSource`, since it can send anything back.
 
 ## Config / YAML editing
 
-For editing a document (a Kubernetes object's YAML, a config blob), use a
+For editing a document (a YAML manifest, a config blob), use a
 `PanelCodeEditor` with a `CodeEditorConfig` that loads current content from its
 `Source` route and applies edits to a save route:
 
 ```go
 plugin.CodeEditorConfig{
     Language:    "yaml",
-    SaveRouteID: "kubernetes.resource.apply", // POST the edited document here
+    SaveRouteID: "myplugin.resource.apply", // POST the edited document here
     SaveMethod:  plugin.MethodPost,
 }
 ```
@@ -438,5 +433,4 @@ text/YAML/SQL, or structured values when JSON pretty-printing is acceptable.
 A database plugin is usually: `LayoutSidebarTree` + a `databases` tree + a
 `table` `ResourceType` whose `DetailView` has a **data** tab (editable grid), a
 **structure** tab (columns/indexes tables), and a **query** tab (query editor),
-with a `Scope` database picker on top. Read postgresql for the full version; it
-uses every pattern here.
+with a `Scope` database picker on top.

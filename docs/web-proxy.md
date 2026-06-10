@@ -101,11 +101,10 @@ proxy must rewrite, in the response:
 - and inject a small runtime shim plus a service worker so the app's _dynamic_
   `fetch`/`WebSocket`/navigation requests stay under the prefix too.
 
-The built-ins do all of this in a gateway-internal `webproxy` package
-(`plugins/shared/webproxy`) that external plugins **cannot import**. For a simple
-internal tool, `httputil.ReverseProxy` with the `Director`/`ModifyResponse` above
-is enough. For a full SPA, read that package and the kubernetes/docker proxy
-handlers (`proxy_http.go`) and port the rewriting you need into your plugin.
+For a simple internal tool, `httputil.ReverseProxy` with the
+`Director`/`ModifyResponse` above is enough. For a full SPA, implement the
+rewrites you need in your plugin and test the target UI through the gateway
+prefix; do not depend on gateway-internal proxy helpers.
 
 ## Notes
 
@@ -114,5 +113,4 @@ handlers (`proxy_http.go`) and port the rewriting you need into your plugin.
 - **Set `FlushInterval: -1`** so streamed responses (logs, server-sent events)
   aren't buffered.
 - **Preserve percent-encoding** when the sub-path can contain encoded characters:
-  read `r.URL.EscapedPath()` for the raw form and set `req.URL.RawPath`, as the
-  kubernetes handler does for route-group chunk names.
+  read `r.URL.EscapedPath()` for the raw form and set `req.URL.RawPath`.

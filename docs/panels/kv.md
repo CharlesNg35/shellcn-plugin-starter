@@ -7,12 +7,12 @@ read value, edit value, delete key. For richer row data, use `PanelTable`.
 plugin.Panel{
     Key: "keys", Label: "Keys", Icon: icon("key-round"),
     Type:   plugin.PanelKV,
-    Source: &plugin.DataSource{RouteID: "demo.keys.list"},
+    Source: &plugin.DataSource{RouteID: "myplugin.keys.list"},
     Config: plugin.KVConfig{
-        CreateRouteID: "demo.key.create",
-        ReadRouteID:   "demo.key.read",
-        WriteRouteID:  "demo.key.write",
-        DeleteRouteID: "demo.key.delete",
+        CreateRouteID: "myplugin.key.create",
+        ReadRouteID:   "myplugin.key.read",
+        WriteRouteID:  "myplugin.key.write",
+        DeleteRouteID: "myplugin.key.delete",
         KeyParam:      "key",
         Writable:      true,
         ValueTypes:    []string{"string", "json", "binary"},

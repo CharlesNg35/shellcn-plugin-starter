@@ -8,7 +8,7 @@ generated before/after DDL.
 plugin.Panel{
     Key: "preview", Label: "Preview", Icon: icon("git-compare"),
     Type:   plugin.PanelDiff,
-    Source: &plugin.DataSource{RouteID: "demo.change.preview", Params: map[string]string{"id": "${resource.uid}"}},
+    Source: &plugin.DataSource{RouteID: "myplugin.change.preview", Params: map[string]string{"id": "${resource.uid}"}},
     Config: plugin.DiffConfig{
         Language:      "yaml",
         OriginalField: "current",

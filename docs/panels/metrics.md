@@ -10,7 +10,7 @@ queue depth, object counts, capacity, and health.
 plugin.Panel{
     Key: "metrics", Label: "Metrics", Icon: icon("activity"),
     Type:   plugin.PanelMetrics,
-    Source: &plugin.DataSource{RouteID: "demo.metrics", Method: plugin.MethodWS},
+    Source: &plugin.DataSource{RouteID: "myplugin.metrics", Method: plugin.MethodWS},
     Config: plugin.MetricsConfig{
         Stats:  []plugin.MetricStat{{Key: "requests", Label: "Requests"}},
         Gauges: []plugin.MetricGauge{{Key: "cpu", Label: "CPU", Unit: "%", Max: 100}},
@@ -23,7 +23,7 @@ plugin.Panel{
 Declare the stream route in `Streams()` as well:
 
 ```go
-plugin.Stream{ID: "demo.metrics", Kind: plugin.StreamMetrics, RouteID: "demo.metrics"}
+plugin.Stream{ID: "myplugin.metrics", Kind: plugin.StreamMetrics, RouteID: "myplugin.metrics"}
 ```
 
 The stream writes JSON snapshots:

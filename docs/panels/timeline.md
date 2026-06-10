@@ -8,7 +8,7 @@ records.
 plugin.Panel{
     Key: "events", Label: "Events", Icon: icon("history"),
     Type:   plugin.PanelTimeline,
-    Source: &plugin.DataSource{RouteID: "demo.events.list", Params: map[string]string{"id": "${resource.uid}"}},
+    Source: &plugin.DataSource{RouteID: "myplugin.events.list", Params: map[string]string{"id": "${resource.uid}"}},
     Config: plugin.TimelineConfig{
         TimestampField:    "time",
         TitleField:        "reason",

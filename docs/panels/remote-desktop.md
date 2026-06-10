@@ -4,11 +4,11 @@ Use `PanelRemoteDesktop` for VNC/RDP/RFB-style interactive desktops. The panel i
 backed by noVNC-compatible browser rendering and a `StreamDesktop` route.
 
 ```go
-Streams: []plugin.Stream{{ID: "demo.desktop", Kind: plugin.StreamDesktop, RouteID: "demo.desktop"}},
+Streams: []plugin.Stream{{ID: "myplugin.desktop", Kind: plugin.StreamDesktop, RouteID: "myplugin.desktop"}},
 plugin.Panel{
     Key: "desktop", Label: "Desktop", Icon: icon("monitor"),
     Type:   plugin.PanelRemoteDesktop,
-    Source: &plugin.DataSource{RouteID: "demo.desktop", Method: plugin.MethodWS},
+    Source: &plugin.DataSource{RouteID: "myplugin.desktop", Method: plugin.MethodWS},
     Config: plugin.RemoteDesktopConfig{Resize: true, Clipboard: true},
 }
 ```

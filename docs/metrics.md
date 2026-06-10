@@ -3,8 +3,7 @@
 When your protocol has live numbers (CPU, memory, container counts, queue
 depth), you can render them as **KPI cards**, **gauges**, and **time-series
 charts**, and group several panels into one **dashboard**. The gateway draws all
-of it from a `MetricsConfig`; your job is to stream frames. This is how the
-docker, proxmox, kubernetes, and redis overviews are built.
+of it from a `MetricsConfig`; your job is to stream frames.
 
 ## The metrics panel
 
@@ -15,7 +14,7 @@ route that streams values:
 plugin.Panel{
     Key: "stats", Label: "Environment",
     Type:   plugin.PanelMetrics,
-    Source: &plugin.DataSource{RouteID: "myproto.overview.metrics", Method: plugin.MethodWS},
+    Source: &plugin.DataSource{RouteID: "myplugin.overview.metrics", Method: plugin.MethodWS},
     Config: plugin.MetricsConfig{
         Stats: []plugin.MetricStat{                  // KPI number cards
             {Key: "containers", Label: "Containers"},
@@ -39,8 +38,8 @@ plugin.Panel{
   means a percentage (0-100). Set `Unit` for the label (`%`, `MB`).
 - **`Series`** - one line on a shared time chart; new frames append a point and
   `History` bounds how many are kept.
-- A key can appear in **both** `Gauges` and `Series` (proxmox shows `cpu` as a
-  live gauge and a trend line at once) - the same frame value feeds both.
+- A key can appear in **both** `Gauges` and `Series`; the same frame value feeds
+  both.
 
 ## The frame contract
 
@@ -91,10 +90,10 @@ panel with a couple of tables:
 ```go
 dash := plugin.DashboardConfig{Cells: []plugin.Panel{
     {Key: "stats", Label: "Environment", Type: plugin.PanelMetrics, Span: 2,
-     Source: &plugin.DataSource{RouteID: "myproto.overview.metrics", Method: plugin.MethodWS},
+     Source: &plugin.DataSource{RouteID: "myplugin.overview.metrics", Method: plugin.MethodWS},
      Config: overviewMetrics()},
     {Key: "containers", Label: "Containers", Type: plugin.PanelTable, Span: 2,
-     Source: &plugin.DataSource{RouteID: "myproto.containers.list"},
+     Source: &plugin.DataSource{RouteID: "myplugin.containers.list"},
      Config: plugin.TableConfig{Columns: containerColumns()}},
 }}
 ```
@@ -112,8 +111,7 @@ Detail: plugin.DetailView{
 
 ## The overview pattern
 
-Engine plugins (docker, podman, swarm) back this with a **single-row**
-`ResourceType` whose one row is "Overview", reached from a tree `Ref`. Clicking it
-opens the dashboard tab above. So a live overview is: one tree node -> one
-resource -> a dashboard of a metrics panel plus tables, fed by one WS route. Read
-the docker or proxmox overview for the complete version.
+For connection-level overviews, use a **single-row** `ResourceType` whose one row
+is "Overview", reached from a tree `Ref`. Clicking it opens the dashboard tab
+above. A live overview is: one tree node -> one resource -> a dashboard of a
+metrics panel plus tables, fed by one WS route.

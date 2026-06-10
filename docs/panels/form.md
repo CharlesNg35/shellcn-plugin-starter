@@ -9,9 +9,9 @@ a tab or a reusable panel.
 plugin.Panel{
     Key: "settings", Label: "Settings", Icon: icon("sliders-horizontal"),
     Type: plugin.PanelForm,
-    Source: &plugin.DataSource{RouteID: "demo.settings.schema"},
+    Source: &plugin.DataSource{RouteID: "myplugin.settings.schema"},
     Config: plugin.FormPanelConfig{
-        SubmitRouteID: "demo.settings.save",
+        SubmitRouteID: "myplugin.settings.save",
         SubmitMethod:  plugin.MethodPut,
         SubmitLabel:   "Save settings",
     },
@@ -26,17 +26,17 @@ gateway validates the request before your handler runs.
 
 ```go
 plugin.Route{
-    ID: "demo.settings.schema", Method: plugin.MethodGet, Path: "/settings/schema",
-    Permission: "demo.settings.read", Risk: plugin.RiskSafe,
-    AuditEvent: "demo.settings.schema", Handle: settingsSchemaRoute,
+    ID: "myplugin.settings.schema", Method: plugin.MethodGet, Path: "/settings/schema",
+    Permission: "myplugin.settings.read", Risk: plugin.RiskSafe,
+    AuditEvent: "myplugin.settings.schema", Handle: settingsSchemaRoute,
 }
 ```
 
 ```go
 plugin.Route{
-    ID: "demo.settings.save", Method: plugin.MethodPut, Path: "/settings",
-    Permission: "demo.settings.write", Risk: plugin.RiskWrite,
-    AuditEvent: "demo.settings.save", Input: settingsSchema(),
+    ID: "myplugin.settings.save", Method: plugin.MethodPut, Path: "/settings",
+    Permission: "myplugin.settings.write", Risk: plugin.RiskWrite,
+    AuditEvent: "myplugin.settings.save", Input: settingsSchema(),
     Handle: saveSettings,
 }
 ```

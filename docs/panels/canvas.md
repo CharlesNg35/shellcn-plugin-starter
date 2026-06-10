@@ -16,7 +16,7 @@ Canvas panels bind to a `StreamCanvas` stream through a WebSocket data source.
 
 ```go
 Streams: []plugin.Stream{
-    {ID: "demo.canvas", Kind: plugin.StreamCanvas, RouteID: "demo.canvas"},
+    {ID: "myplugin.canvas", Kind: plugin.StreamCanvas, RouteID: "myplugin.canvas"},
 },
 Tabs: []plugin.Panel{{
     Key:   "canvas",
@@ -24,7 +24,7 @@ Tabs: []plugin.Panel{{
     Icon:  plugin.Icon{Type: plugin.IconLucide, Value: "scan"},
     Type:  plugin.PanelCanvas,
     Source: &plugin.DataSource{
-        RouteID: "demo.canvas",
+        RouteID: "myplugin.canvas",
         Method:  plugin.MethodWS,
     },
     Config: plugin.CanvasConfig{

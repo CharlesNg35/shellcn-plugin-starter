@@ -305,13 +305,13 @@ plugin.WasmConfig{
     Boot:   plugin.WasmBoot{Scripts: []string{"wasm_exec.js"}},
     Assets: []plugin.WasmAsset{
         {Path: "wasm_exec.js", MIME: "text/javascript",
-            Source: plugin.DataSource{RouteID: "demo.asset", Params: map[string]string{"path": "wasm_exec.js"}}},
+            Source: plugin.DataSource{RouteID: "myplugin.asset", Params: map[string]string{"path": "wasm_exec.js"}}},
         {Path: "app.wasm", MIME: "application/wasm",
-            Source: plugin.DataSource{RouteID: "demo.asset", Params: map[string]string{"path": "app.wasm"}}},
+            Source: plugin.DataSource{RouteID: "myplugin.asset", Params: map[string]string{"path": "app.wasm"}}},
     },
     Bridge: plugin.WasmBridge{
-        Routes:  []plugin.WasmBridgeRoute{{RouteID: "demo.state.get", Method: plugin.MethodGet}},
-        Streams: []plugin.WasmBridgeStream{{RouteID: "demo.events"}},
+        Routes:  []plugin.WasmBridgeRoute{{RouteID: "myplugin.state.get", Method: plugin.MethodGet}},
+        Streams: []plugin.WasmBridgeStream{{RouteID: "myplugin.events"}},
     },
 }
 ```
@@ -344,10 +344,10 @@ the app actually needs, such as keyboard, pointer, fullscreen, pointer lock, or
 gamepad.
 
 The sandbox also receives the ShellCN theme through `window.shellcn.theme`
-(`"light"` or `"dark"`). For live changes, call
-`window.shellcn.onTheme((theme) => { ... })`; the parent posts theme updates
-through the same bridge, so the WASM app does not need same-origin access or
-parent DOM reads. See [panel theming](panels/theming.md) and
+(`"light"` or `"dark"`) and token colors through `window.shellcn.colors`. For
+live changes, call `window.shellcn.onTheme((theme, colors) => { ... })`; the
+parent posts theme updates through the same bridge, so the WASM app does not
+need same-origin access or parent DOM reads. See [panel theming](panels/theming.md) and
 [PanelWasm](panels/wasm.md) for the full bridge API.
 
 The sandbox intentionally omits `allow-same-origin`. The app runs with an opaque

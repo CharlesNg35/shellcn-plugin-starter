@@ -5,8 +5,8 @@ your handler runs, and a handler that is pure business logic.
 
 ```go
 {
-    ID: "starter.set", Method: plugin.MethodPost, Path: "/entries",
-    Permission: "starter.write", Risk: plugin.RiskWrite, AuditEvent: "starter.set",
+    ID: "myplugin.set", Method: plugin.MethodPost, Path: "/entries",
+    Permission: "myplugin.write", Risk: plugin.RiskWrite, AuditEvent: "myplugin.set",
     Input: setSchema(), Handle: set,
 },
 ```
@@ -26,8 +26,8 @@ your handler runs, and a handler that is pure business logic.
 | `Handle`     | The handler (`func(*RequestContext) (any, error)`).                                   |
 | `Stream`     | For `MethodWS` routes only - see [streaming.md](streaming.md).                        |
 
-Route IDs are scoped by plugin name. If your manifest `Name` is `starter`, every
-route ID must begin with `starter.`. The gateway validates this during
+Route IDs are scoped by plugin name. If your manifest `Name` is `myplugin`, every
+route ID must begin with `myplugin.`. The gateway validates this during
 registration and resolves route calls by `(connection protocol, route ID)`, not
 by a global route table. A plugin cannot call another plugin's route by
 declaring `other.route`; that route is not in its own route set, and declaring a

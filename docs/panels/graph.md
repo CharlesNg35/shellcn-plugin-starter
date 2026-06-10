@@ -7,11 +7,11 @@ maps, database relationships, cluster links, index aliases, or network graphs.
 plugin.Panel{
     Key: "relations", Label: "Relationships", Icon: icon("workflow"),
     Type:   plugin.PanelGraph,
-    Source: &plugin.DataSource{RouteID: "demo.graph", Params: map[string]string{"id": "${resource.uid}"}},
+    Source: &plugin.DataSource{RouteID: "myplugin.graph", Params: map[string]string{"id": "${resource.uid}"}},
     Config: plugin.GraphConfig{
         Layout:        plugin.GraphLayoutGrid,
         FitView:       true,
-        ExpandRouteID: "demo.graph.expand",
+        ExpandRouteID: "myplugin.graph.expand",
         ExpandParam:   "node",
     },
 }

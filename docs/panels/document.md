@@ -7,7 +7,7 @@ YAML, mapping/settings documents, rendered markdown, or backend definitions.
 plugin.Panel{
     Key: "definition", Label: "Definition", Icon: icon("braces"),
     Type:   plugin.PanelDocument,
-    Source: &plugin.DataSource{RouteID: "demo.definition.read", Params: map[string]string{"id": "${resource.uid}"}},
+    Source: &plugin.DataSource{RouteID: "myplugin.definition.read", Params: map[string]string{"id": "${resource.uid}"}},
 }
 ```
 

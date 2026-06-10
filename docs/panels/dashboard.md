@@ -7,10 +7,10 @@ tabs that need charts plus lists.
 ```go
 dash := plugin.DashboardConfig{Cells: []plugin.Panel{
     {Key: "metrics", Label: "Metrics", Type: plugin.PanelMetrics, Span: 2,
-        Source: &plugin.DataSource{RouteID: "demo.metrics", Method: plugin.MethodWS},
+        Source: &plugin.DataSource{RouteID: "myplugin.metrics", Method: plugin.MethodWS},
         Config: metricsConfig()},
     {Key: "tasks", Label: "Tasks", Type: plugin.PanelTable, Span: 2,
-        Source: &plugin.DataSource{RouteID: "demo.tasks.list"},
+        Source: &plugin.DataSource{RouteID: "myplugin.tasks.list"},
         Config: plugin.TableConfig{Columns: taskColumns()}},
 }}
 

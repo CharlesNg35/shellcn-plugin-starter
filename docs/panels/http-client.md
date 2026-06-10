@@ -8,7 +8,7 @@ plugin.Panel{
     Key: "client", Label: "Client", Icon: icon("send"),
     Type: plugin.PanelHTTPClient,
     Config: plugin.HTTPClientConfig{
-        ExecuteRouteID: "demo.http.execute",
+        ExecuteRouteID: "myplugin.http.execute",
         Methods:       []string{"GET", "POST", "PUT", "DELETE"},
         DefaultMethod: "GET",
         DefaultURL:    "/api/v1/status",

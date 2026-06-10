@@ -39,11 +39,11 @@ plugin.Panel{
         },
         Bridge: plugin.WasmBridge{
             Routes: []plugin.WasmBridgeRoute{
-                {RouteID: "demo.state", Method: plugin.MethodGet},
-                {RouteID: "demo.score", Method: plugin.MethodPost},
+                {RouteID: "myplugin.state", Method: plugin.MethodGet},
+                {RouteID: "myplugin.score", Method: plugin.MethodPost},
             },
             Streams: []plugin.WasmBridgeStream{
-                {RouteID: "demo.events"},
+                {RouteID: "myplugin.events"},
             },
         },
         AriaLabel:    "WASM demo console",
@@ -61,7 +61,7 @@ func wasmAsset(name, mime string) plugin.WasmAsset {
         Path: name,
         MIME: mime,
         Source: plugin.DataSource{
-            RouteID: "demo.asset",
+            RouteID: "myplugin.asset",
             Params:  map[string]string{"path": name},
         },
     }
@@ -113,8 +113,8 @@ Register that route like any other route:
 
 ```go
 plugin.Route{
-    ID: "demo.asset", Method: plugin.MethodGet, Path: "/asset",
-    Permission: "demo.read", Risk: plugin.RiskSafe, AuditEvent: "demo.asset",
+    ID: "myplugin.asset", Method: plugin.MethodGet, Path: "/asset",
+    Permission: "myplugin.read", Risk: plugin.RiskSafe, AuditEvent: "myplugin.asset",
     Handle: assetRoute,
 }
 ```
@@ -140,9 +140,9 @@ plugin.WasmConfig{
         wasmAsset("boot.js", "text/javascript"),
     },
     Bridge: plugin.WasmBridge{Routes: []plugin.WasmBridgeRoute{
-        {RouteID: "demo.todos.list", Method: plugin.MethodGet},
-        {RouteID: "demo.todos.save", Method: plugin.MethodPost},
-        {RouteID: "demo.todos.delete", Method: plugin.MethodDelete},
+        {RouteID: "myplugin.todos.list", Method: plugin.MethodGet},
+        {RouteID: "myplugin.todos.save", Method: plugin.MethodPost},
+        {RouteID: "myplugin.todos.delete", Method: plugin.MethodDelete},
     }},
     Capabilities: plugin.WasmCapabilities{Keyboard: true, Pointer: true},
 }
@@ -183,11 +183,11 @@ routes declared in `Bridge.Routes` and streams declared in `Bridge.Streams`.
 ```go
 Bridge: plugin.WasmBridge{
     Routes: []plugin.WasmBridgeRoute{
-        {RouteID: "demo.state", Method: plugin.MethodGet},
-        {RouteID: "demo.save", Method: plugin.MethodPost},
+        {RouteID: "myplugin.state", Method: plugin.MethodGet},
+        {RouteID: "myplugin.save", Method: plugin.MethodPost},
     },
     Streams: []plugin.WasmBridgeStream{
-        {RouteID: "demo.events"},
+        {RouteID: "myplugin.events"},
     },
 }
 ```
@@ -212,7 +212,8 @@ supported way for WASM JavaScript glue to talk back to ShellCN.
 window.shellcn.entry              // primary WASM path from WasmConfig.Entry
 window.shellcn.capabilities       // declared capabilities
 window.shellcn.theme              // "light" or "dark"
-window.shellcn.onTheme(fn)        // subscribe to theme changes, returns unsubscribe
+window.shellcn.colors             // ShellCN primary/surface color tokens
+window.shellcn.onTheme(fn)        // subscribe to theme/color changes, returns unsubscribe
 window.shellcn.route(id, body, options)
 window.shellcn.asset(path)
 window.shellcn.assetURL(path, mime)
@@ -223,7 +224,7 @@ Route calls return a promise:
 
 ```js
 const state = await window.shellcn.route(
-  "demo.state",
+  "myplugin.state",
   {},
   { method: "GET", params: { namespace: "default" } },
 );
@@ -247,7 +248,7 @@ const fontURL = await window.shellcn.assetURL(
 Stream calls return a handle:
 
 ```js
-const stream = window.shellcn.stream("demo.events");
+const stream = window.shellcn.stream("myplugin.events");
 const off = stream.onMessage((data) => {
   console.log("event", data);
 });
@@ -261,15 +262,20 @@ from the backend arrive as browser WebSocket message data, usually a string.
 
 ## Theme
 
-WASM panels receive the current ShellCN theme through the bridge. The value is
-`"light"` or `"dark"`.
+WASM panels receive the current ShellCN theme and token colors through the
+bridge. `window.shellcn.theme` is `"light"` or `"dark"`.
+`window.shellcn.colors` is a plain object containing primary and surface tokens
+such as `primary500`, `surface0`, `surface900`, and `surface950`.
 
 ```js
-function applyTheme(theme) {
+function applyTheme(theme, colors = window.shellcn.colors || {}) {
   document.body.dataset.theme = theme === "light" ? "light" : "dark";
+  document.documentElement.style.setProperty("--shellcn-primary", colors.primary500 || "#38bdf8");
+  document.documentElement.style.setProperty("--shellcn-bg", colors.surface950 || "#020617");
+  document.documentElement.style.setProperty("--shellcn-text", colors.surface100 || "#e2e8f0");
 }
 
-applyTheme(window.shellcn.theme);
+applyTheme(window.shellcn.theme, window.shellcn.colors);
 window.shellcn.onTheme(applyTheme);
 ```
 
@@ -293,9 +299,10 @@ body[data-theme="light"] {
 }
 ```
 
-The sandbox cannot read ShellCN parent CSS variables or Tailwind classes. Theme
-is a visual hint only; route behavior, permissions, and storage keys must not
-depend on it.
+The sandbox cannot read ShellCN parent CSS variables or Tailwind classes. Use the
+bridge-provided `colors` object instead of reaching into the parent DOM. Theme is
+a visual hint only; route behavior, permissions, and storage keys must not depend
+on it.
 
 ## Storage-backed WASM apps
 

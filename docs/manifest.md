@@ -249,7 +249,7 @@ Rules of thumb:
 ```go
 // One screen (a file manager):
 Layout: plugin.LayoutSingle,
-Tabs:   []plugin.Panel{{Key: "files", Type: plugin.PanelFileBrowser, Source: &plugin.DataSource{RouteID: "fs.list"}}},
+Tabs:   []plugin.Panel{{Key: "files", Type: plugin.PanelFileBrowser, Source: &plugin.DataSource{RouteID: "myplugin.list"}}},
 
 // Explorer (databases -> tables): a tree plus resource types with detail views.
 Layout:    plugin.LayoutSidebarTree,
@@ -267,7 +267,7 @@ type.
 Tabs: []plugin.Panel{{
     Key: "entries", Label: "Entries", Icon: icon("list"),
     Type:   plugin.PanelTable,
-    Source: &plugin.DataSource{RouteID: "starter.list"},
+    Source: &plugin.DataSource{RouteID: "myplugin.list"},
     Config: plugin.TableConfig{ /* ... */ },
 }},
 ```
@@ -387,8 +387,9 @@ Use the most structured panel that fits the data:
   renderer fetches the bytes through authenticated plugin routes and posts them
   into the sandbox; the WASM app uses `window.shellcn.route`,
   `window.shellcn.stream`, and `window.shellcn.asset` for declared bridge access.
-  Read `window.shellcn.theme` and subscribe with `window.shellcn.onTheme(fn)` so
-  custom DOM/canvas/WebGL rendering follows ShellCN light and dark mode.
+  Read `window.shellcn.theme` and `window.shellcn.colors`, then subscribe with
+  `window.shellcn.onTheme(fn)` so custom DOM/canvas/WebGL rendering follows
+  ShellCN light and dark mode.
 - For Rust, Leptos, Yew, wasm-bindgen, Emscripten, TinyGo without the Go runtime,
   or any framework that emits JavaScript glue, use
   `Runtime: plugin.WasmRuntimeGeneric`. The `Entry` is still the WASM binary
@@ -415,7 +416,7 @@ closed and typed rather than passing ad-hoc maps.
 A panel (or column source, watch, action) binds to a route by id:
 
 ```go
-&plugin.DataSource{RouteID: "starter.list", Method: plugin.MethodGet, Params: map[string]string{"scope": "${scope.region}"}}
+&plugin.DataSource{RouteID: "myplugin.list", Method: plugin.MethodGet, Params: map[string]string{"scope": "${scope.region}"}}
 ```
 
 The gateway resolves `RouteID` + `Params` to a URL. Params interpolate from the
@@ -432,8 +433,8 @@ plugin.TableConfig{
         {Key: "state", Label: "State", Type: plugin.ColumnBadge,
          Severities: map[string]plugin.Severity{"running": plugin.SeveritySuccess, "down": plugin.SeverityDanger}},
     },
-    ActionIDs:    []string{"starter.set"},    // toolbar buttons
-    RowActionIDs: []string{"starter.delete"}, // per-row buttons (implies row selection)
+    ActionIDs:    []string{"myplugin.set"},    // toolbar buttons
+    RowActionIDs: []string{"myplugin.delete"}, // per-row buttons (implies row selection)
     DefaultSort:  &plugin.SortKey{Field: "key"},
     Exportable:   true,                       // allow CSV/JSON export of loaded rows
     // Editable grids: set RowKey + Insert/Update/Delete DataSources.
@@ -459,9 +460,9 @@ opens a form; otherwise it fires immediately.
 
 ```go
 Actions: []plugin.Action{
-    {ID: "starter.set", Label: "Set entry", Icon: icon("plus"), RouteID: "starter.set"},
+    {ID: "myplugin.set", Label: "Set entry", Icon: icon("plus"), RouteID: "myplugin.set"},
     {
-        ID: "starter.delete", Label: "Delete", Icon: icon("trash-2"), RouteID: "starter.delete",
+        ID: "myplugin.delete", Label: "Delete", Icon: icon("trash-2"), RouteID: "myplugin.delete",
         Params:      map[string]string{"key": "${resource.uid}"},
         Confirm:     true, ConfirmText: "Delete this entry?",
     },

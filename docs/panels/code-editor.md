@@ -7,10 +7,10 @@ and request bodies. It can be used as a tab or as an action-opened dialog.
 plugin.Panel{
     Key: "editor", Label: "Editor", Icon: icon("code"),
     Type:   plugin.PanelCodeEditor,
-    Source: &plugin.DataSource{RouteID: "demo.document.read", Params: map[string]string{"id": "${resource.uid}"}},
+    Source: &plugin.DataSource{RouteID: "myplugin.document.read", Params: map[string]string{"id": "${resource.uid}"}},
     Config: plugin.CodeEditorConfig{
         Language:    "json",
-        SaveRouteID: "demo.document.update",
+        SaveRouteID: "myplugin.document.update",
         SaveMethod:  plugin.MethodPut,
         SaveParams:  map[string]string{"id": "${resource.uid}"},
     },
@@ -35,7 +35,7 @@ Use `SaveBodyKey` when the backend route expects a different field:
 ```go
 Config: plugin.CodeEditorConfig{
     Language:    "json",
-    SaveRouteID: "demo.mapping.update",
+    SaveRouteID: "myplugin.mapping.update",
     SaveMethod:  plugin.MethodPut,
     SaveBodyKey: "mapping",
 }
@@ -62,12 +62,12 @@ For create/update dialogs, define an action with `Open: plugin.OpenDialog`,
 
 ```go
 plugin.Action{
-    ID: "demo.document.create", Label: "Create document", Icon: icon("plus"),
-    RouteID: "demo.document.create", Open: plugin.OpenDialog,
+    ID: "myplugin.document.create", Label: "Create document", Icon: icon("plus"),
+    RouteID: "myplugin.document.create", Open: plugin.OpenDialog,
     Panel: plugin.PanelCodeEditor,
     Config: plugin.CodeEditorConfig{
         Language: "json", InitialContent: "{\n  \"id\": \"example\"\n}",
-        SaveRouteID: "demo.document.create", SaveMethod: plugin.MethodPost,
+        SaveRouteID: "myplugin.document.create", SaveMethod: plugin.MethodPost,
         SaveBodyKey: "document",
     },
 }
