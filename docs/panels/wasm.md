@@ -1,8 +1,9 @@
 # PanelWasm
 
-Use `PanelWasm` for isolated browser-side programs that genuinely need
-WebAssembly: existing Go/Rust/Flutter apps, heavy visualizers, simulators,
-games, or protocol tools that are already compiled to WASM.
+Use `PanelWasm` for isolated browser-side programs that need their own runtime:
+existing Go/Rust/Flutter apps, heavy visualizers, simulators, games, protocol
+tools that are already compiled to WASM, or sandboxed raw JavaScript/framework
+apps that cannot be expressed with the standard manifest panels.
 
 Do not use it just to get custom UI. If a standard panel can represent the
 workflow, prefer the standard panel. The core renderer gives standard panels
@@ -125,8 +126,15 @@ otherwise immutable.
 
 ## Generic runtimes
 
-Use `WasmRuntimeGeneric` for Rust, wasm-bindgen, Emscripten, Flutter, and custom
-loaders. Put generated JavaScript loaders in both `Boot.Scripts` and `Assets`.
+Use `WasmRuntimeGeneric` for Rust, wasm-bindgen, Emscripten, Flutter, raw
+JavaScript, browser framework bundles, and custom loaders. Put generated
+JavaScript loaders in both `Boot.Scripts` and `Assets`.
+
+With `Runtime: plugin.WasmRuntimeGeneric`, boot scripts own startup. If boot
+scripts are present, the renderer loads the bridge, loads those scripts, and
+does not auto-instantiate `Entry`. That is what makes generic runtimes work:
+Rust glue, Flutter loaders, Emscripten output, React/Vue/Svelte bundles, or
+plain browser JavaScript can decide how and when to load their own assets.
 
 ```go
 plugin.WasmConfig{
@@ -147,6 +155,80 @@ plugin.WasmConfig{
     Capabilities: plugin.WasmCapabilities{Keyboard: true, Pointer: true},
 }
 ```
+
+### Raw JavaScript or framework bundles
+
+`PanelWasm` can also host a sandboxed browser app that has no `.wasm` file. This
+is useful for a complex visual tool that needs a framework runtime but must stay
+isolated from the ShellCN frontend. Use this sparingly; if `PanelCanvas`,
+`PanelGraph`, `PanelDashboard`, or another standard panel can model the UI, use
+the standard panel.
+
+For a pure JavaScript bundle, set `Runtime` to `WasmRuntimeGeneric`, declare the
+main app script as `Entry`, include it in `Boot.Scripts`, and list every JS, CSS,
+font, image, and data file in `Assets`.
+
+```go
+plugin.WasmConfig{
+    Entry:     "app.js",
+    Runtime:   plugin.WasmRuntimeGeneric,
+    ScaleMode: plugin.WasmScaleScroll,
+    Boot:      plugin.WasmBoot{Scripts: []string{"vendor.js", "app.js"}},
+    Assets: []plugin.WasmAsset{
+        wasmAsset("vendor.js", "text/javascript"),
+        wasmAsset("app.js", "text/javascript"),
+        wasmAsset("styles.css", "text/css"),
+        wasmAsset("icons.svg", "image/svg+xml"),
+    },
+    Bridge: plugin.WasmBridge{
+        Routes: []plugin.WasmBridgeRoute{
+            {RouteID: "myplugin.state", Method: plugin.MethodGet},
+            {RouteID: "myplugin.save", Method: plugin.MethodPost},
+        },
+        Streams: []plugin.WasmBridgeStream{
+            {RouteID: "myplugin.events"},
+        },
+    },
+    Capabilities: plugin.WasmCapabilities{Keyboard: true, Pointer: true},
+    AriaLabel:    "Custom visual operations app",
+}
+```
+
+Inside `app.js`, mount your framework normally and use `window.shellcn` for all
+ShellCN access:
+
+```js
+const root =
+  document.getElementById("app") ||
+  document.body.appendChild(document.createElement("div"));
+root.id = "app";
+
+const state = await window.shellcn.route(
+  "myplugin.state",
+  {},
+  { method: "GET" },
+);
+
+window.shellcn.onTheme((theme, colors) => {
+  document.body.dataset.theme = theme;
+  document.documentElement.style.setProperty(
+    "--accent",
+    colors.primary500 || "#38bdf8",
+  );
+});
+
+renderApp(root, {
+  state,
+  save: (body) =>
+    window.shellcn.route("myplugin.save", body, { method: "POST" }),
+  events: () => window.shellcn.stream("myplugin.events"),
+});
+```
+
+Do not use ambient `fetch("/...")`, cookies, `localStorage`, or parent-window
+DOM access. The iframe has an opaque origin and a restrictive CSP. Load declared
+files with `window.shellcn.asset()` or `window.shellcn.assetURL()`, and call
+backend behavior through allowlisted bridge routes and streams.
 
 For Flutter-style bundles, include the runtime files and any generated asset
 tree the loader needs:
@@ -209,15 +291,15 @@ The iframe gets a small `window.shellcn` object. This object is the only
 supported way for WASM JavaScript glue to talk back to ShellCN.
 
 ```js
-window.shellcn.entry              // primary WASM path from WasmConfig.Entry
-window.shellcn.capabilities       // declared capabilities
-window.shellcn.theme              // "light" or "dark"
-window.shellcn.colors             // ShellCN primary/surface color tokens
-window.shellcn.onTheme(fn)        // subscribe to theme/color changes, returns unsubscribe
-window.shellcn.route(id, body, options)
-window.shellcn.asset(path)
-window.shellcn.assetURL(path, mime)
-window.shellcn.stream(id, params)
+window.shellcn.entry; // primary WASM path from WasmConfig.Entry
+window.shellcn.capabilities; // declared capabilities
+window.shellcn.theme; // "light" or "dark"
+window.shellcn.colors; // ShellCN primary/surface color tokens
+window.shellcn.onTheme(fn); // subscribe to theme/color changes, returns unsubscribe
+window.shellcn.route(id, body, options);
+window.shellcn.asset(path);
+window.shellcn.assetURL(path, mime);
+window.shellcn.stream(id, params);
 ```
 
 Route calls return a promise:
@@ -270,9 +352,18 @@ such as `primary500`, `surface0`, `surface900`, and `surface950`.
 ```js
 function applyTheme(theme, colors = window.shellcn.colors || {}) {
   document.body.dataset.theme = theme === "light" ? "light" : "dark";
-  document.documentElement.style.setProperty("--shellcn-primary", colors.primary500 || "#38bdf8");
-  document.documentElement.style.setProperty("--shellcn-bg", colors.surface950 || "#020617");
-  document.documentElement.style.setProperty("--shellcn-text", colors.surface100 || "#e2e8f0");
+  document.documentElement.style.setProperty(
+    "--shellcn-primary",
+    colors.primary500 || "#38bdf8",
+  );
+  document.documentElement.style.setProperty(
+    "--shellcn-bg",
+    colors.surface950 || "#020617",
+  );
+  document.documentElement.style.setProperty(
+    "--shellcn-text",
+    colors.surface100 || "#e2e8f0",
+  );
 }
 
 applyTheme(window.shellcn.theme, window.shellcn.colors);

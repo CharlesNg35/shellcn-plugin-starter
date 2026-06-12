@@ -157,12 +157,13 @@ pointer/keyboard/wheel input). Terminal panels can opt into extras via
 `TerminalConfig{Zoom, Search}` or `TerminalGridConfig{MaxPanes, DefaultPanes,
 Zoom, Search}`.
 
-`PanelWasm` is not itself a stream panel. It is a sandboxed browser-side WASM
-program that may open only the routes and streams declared in
-`WasmConfig.Bridge`. Use it when the UI must run inside the browser, such as a
-portable simulation, game, or WASM-powered visualizer. Keep ordinary long-lived
-terminal/log/query/metrics flows on the native stream panels, and keep custom
-server-driven drawing on `PanelCanvas`.
+`PanelWasm` is not itself a stream panel. It is a sandboxed browser-side app
+that may open only the routes and streams declared in `WasmConfig.Bridge`. Use
+it when the UI must run inside the browser, such as a portable simulation, game,
+WASM-powered visualizer, Flutter app, or raw JavaScript/framework app using
+`WasmRuntimeGeneric`. Keep ordinary long-lived terminal/log/query/metrics flows
+on the native stream panels, and keep custom server-driven drawing on
+`PanelCanvas`.
 
 ### Stream kind semantics and keepalive
 
