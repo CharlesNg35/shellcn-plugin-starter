@@ -46,7 +46,7 @@ plugin.Field{
     Label: "Credential",
     Type:  plugin.FieldCredentialRef,
     Credential: &plugin.CredentialSelector{
-        Kinds:    []plugin.CredentialKind{plugin.CredentialDBPassword},
+        Kind:     plugin.CredentialDBPassword,
         Required: true,
     },
 }
@@ -70,6 +70,11 @@ For a non-standard field key, pass that key:
 ```go
 secret := cfg.CredentialSecretFor("api_credential")
 ```
+
+Each `FieldCredentialRef` selector declares one credential kind. If a protocol
+supports alternative stored credentials, such as a stored password and a stored
+private key, expose separate fields with separate `VisibleWhen` rules. This keeps
+stored config keys, labels, and credential creation predictable.
 
 ## SDK credential kinds
 

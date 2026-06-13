@@ -178,7 +178,7 @@ by kind:
 {
     Key: "credential", Label: "Credential", Type: plugin.FieldCredentialRef,
     Credential: &plugin.CredentialSelector{
-        Kinds:    []plugin.CredentialKind{plugin.CredentialDBPassword},
+        Kind:     plugin.CredentialDBPassword,
         Required: true,
     },
 },
@@ -198,10 +198,14 @@ CredentialKinds: []plugin.CredentialKindInfo{{
 }},
 ```
 
-Reference it from a `credential_ref` field's `CredentialSelector{Kinds: ...}`. The
+Reference it from a `credential_ref` field's `CredentialSelector{Kind: ...}`. The
 field stores only the credential id; the gateway resolves and injects the secret,
 which you read with `cfg.CredentialSecretFor(...)` (see
 [sessions.md](sessions.md)). The client never sees it.
+
+Use one `credential_ref` field per credential kind. Do not make one field accept
+several kinds; model alternatives as separate fields with explicit labels and
+visibility rules.
 
 ### Composite fields
 
