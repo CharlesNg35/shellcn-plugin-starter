@@ -13,8 +13,15 @@ plugin.Panel{
     Source: &plugin.DataSource{RouteID: "myplugin.metrics", Method: plugin.MethodWS},
     Config: plugin.MetricsConfig{
         Stats:  []plugin.MetricStat{{Key: "requests", Label: "Requests"}},
-        Gauges: []plugin.MetricGauge{{Key: "cpu", Label: "CPU", Unit: "%", Max: 100}},
-        Series: []plugin.MetricSeries{{Key: "cpu", Label: "CPU", Unit: "%"}},
+        Usage: []plugin.MetricUsage{{
+            Key: "cpuPct", Label: "CPU usage", Type: plugin.ColumnPercent,
+            Usage: &plugin.UsageSpec{
+                PercentKey: "cpuPct", UsedKey: "cpuUsed", TotalKey: "cpuTotal",
+                UsedType: plugin.ColumnNumber, TotalType: plugin.ColumnNumber,
+                TotalLabel: "of", Unit: "core(s)", WarnAt: 75, CriticalAt: 90,
+            },
+        }},
+        Series: []plugin.MetricSeries{{Key: "cpuPct", Label: "CPU", Unit: "%"}},
         History: 60,
     },
 }

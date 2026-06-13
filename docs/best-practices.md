@@ -182,6 +182,18 @@ Store opaque `Value` bytes with a `ContentType`, plus lightweight `Metadata` for
 labels or local sorting. Keep secrets out of plugin storage - use credentials
 for secrets.
 
+## Operator views: show comparisons explicitly
+
+Operators read status screens by comparing current use against capacity. For
+resources such as CPU, memory, disk, quota, connection pools, and queues, prefer
+`ObjectDetailField.Usage` over separate loose fields like `used`, `total`, and
+`percent`. The renderer shows the percentage, used/total text, thresholds, and a
+progress bar consistently across object overview panels and live metrics panels.
+
+Keep usage rows generic. Do not encode plugin names or product-specific visual
+rules into the contract; use `UsageSpec` keys, types, labels, units, and
+thresholds to describe the data.
+
 ## Reading config safely
 
 `cfg.String(key)` returns `""` if absent/non-string; `cfg.Int(key)` returns

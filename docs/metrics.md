@@ -1,9 +1,9 @@
 # Metrics & dashboards
 
 When your protocol has live numbers (CPU, memory, container counts, queue
-depth), you can render them as **KPI cards**, **gauges**, and **time-series
-charts**, and group several panels into one **dashboard**. The gateway draws all
-of it from a `MetricsConfig`; your job is to stream frames.
+depth), you can render them as **KPI cards**, **usage rows**, **gauges**, and
+**time-series charts**, and group several panels into one **dashboard**. The
+gateway draws all of it from a `MetricsConfig`; your job is to stream frames.
 
 ## The metrics panel
 
@@ -20,9 +20,14 @@ plugin.Panel{
             {Key: "containers", Label: "Containers"},
             {Key: "running",    Label: "Running"},
         },
-        Gauges: []plugin.MetricGauge{                // radial gauges (value vs Max)
-            {Key: "cpu", Label: "CPU", Unit: "%", Max: 100},
-            {Key: "mem", Label: "Memory", Unit: "%", Max: 100},
+        Usage: []plugin.MetricUsage{           // used/capacity rows
+            {Key: "cpuPct", Label: "CPU usage", Type: plugin.ColumnPercent,
+             Usage: &plugin.UsageSpec{PercentKey: "cpuPct", UsedKey: "cpuUsed", TotalKey: "cpuTotal",
+                 UsedType: plugin.ColumnNumber, TotalType: plugin.ColumnNumber, TotalLabel: "of", Unit: "core(s)",
+                 WarnAt: 75, CriticalAt: 90}},
+            {Key: "memPct", Label: "Memory usage", Type: plugin.ColumnPercent,
+             Usage: &plugin.UsageSpec{PercentKey: "memPct", UsedKey: "memUsed", TotalKey: "memTotal",
+                 UsedType: plugin.ColumnBytes, TotalType: plugin.ColumnBytes, WarnAt: 80, CriticalAt: 95}},
         },
         Series: []plugin.MetricSeries{               // lines on a time chart
             {Key: "cpu", Label: "CPU", Unit: "%"},
@@ -34,12 +39,18 @@ plugin.Panel{
 ```
 
 - **`Stats`** - a scalar shown as a number card. Good for counts.
-- **`Gauges`** - a radial gauge of the current value against `Max`. `Max: 0`
-  means a percentage (0-100). Set `Unit` for the label (`%`, `MB`).
+- **`Gauges`** - a radial gauge of the current value against `Max`. Use these
+  sparingly for standalone scores. Do not also declare a usage row for the same
+  value.
+- **`Usage`** - the same usage rows as `PanelObjectDetail`, useful when a live
+  metric should read as used/capacity instead of just a chart. Prefer this for
+  CPU, memory, disk, quota, pool, and queue capacity. Declare each row with
+  `MetricUsage{Usage: &plugin.UsageSpec{...}}`.
 - **`Series`** - one line on a shared time chart; new frames append a point and
   `History` bounds how many are kept.
-- A key can appear in **both** `Gauges` and `Series`; the same frame value feeds
-  both.
+- A key can appear in **both** `Usage` and `Series`; the same frame value feeds a
+  current usage row and a trend line. Avoid declaring the same key in `Gauges`
+  and `Usage`.
 
 ## The frame contract
 
@@ -71,8 +82,12 @@ func frame(ctx context.Context) map[string]any {
     return map[string]any{
         "containers": 12,
         "running":    9,
-        "cpu":        round1(cpuPercent),
-        "mem":        round1(memPercent),
+        "cpuPct":     round1(cpuPercent),
+        "cpuUsed":    round1(cpuUsed),
+        "cpuTotal":   round1(cpuTotal),
+        "memPct":     round1(memPercent),
+        "memUsed":    memUsedBytes,
+        "memTotal":   memTotalBytes,
     }
 }
 ```

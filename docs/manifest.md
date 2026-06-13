@@ -291,7 +291,7 @@ data for the selected resource.
 | `PanelFileBrowser`   | `FileBrowserConfig`   | A file manager.                    |
 | `PanelCodeEditor`    | `CodeEditorConfig`    | A CodeMirror editor.               |
 | `PanelDiff`          | `DiffConfig`          | A read-only before/after diff.     |
-| `PanelMetrics`       | `MetricsConfig`       | KPI cards, gauges, time-series.    |
+| `PanelMetrics`       | `MetricsConfig`       | KPI cards, usage rows, charts.     |
 | `PanelGraph`         | `GraphConfig`         | A node/edge graph.                 |
 | `PanelTrace`         | `TraceConfig`         | A distributed-trace view.          |
 | `PanelKV`            | `KVConfig`            | A key/value browser.               |
@@ -316,7 +316,13 @@ mistakes.
 Use the most structured panel that fits the data:
 
 - Use `PanelObjectDetail` for typed fields, copy buttons, badges, redaction, and
-  optional raw JSON. Prefer it over `PanelDocument` for object properties.
+  optional raw JSON. Prefer it over `PanelDocument` for object properties. Add
+  `ObjectDetailField.Usage` when a field represents consumed capacity, such as
+  CPU, memory, disk, quota, or pool usage.
+- Use `MetricsConfig.Usage` for live usage rows. Declare them as
+  `MetricUsage{Usage: &plugin.UsageSpec{...}}`; it shares the same underlying
+  contract as object-detail usage fields without making authors import an
+  object-detail name in metrics code.
 - Use `PanelTimeline` for Kubernetes events, Docker events, audit trails, task
   history, or database activity feeds returned by a list route.
 - Use `PanelTaskProgress` for cancellable/retryable long-running jobs that stream
