@@ -30,8 +30,8 @@ plugin.Panel{
                  UsedType: plugin.ColumnBytes, TotalType: plugin.ColumnBytes, WarnAt: 80, CriticalAt: 95}},
         },
         Series: []plugin.MetricSeries{               // lines on a time chart
-            {Key: "cpu", Label: "CPU", Unit: "%"},
-            {Key: "mem", Label: "Memory", Unit: "%"},
+            {Key: "cpuPct", Label: "CPU", Unit: "%"},
+            {Key: "memPct", Label: "Memory", Unit: "%"},
         },
         History: 60,                                 // points kept per line
     },
@@ -39,6 +39,9 @@ plugin.Panel{
 ```
 
 - **`Stats`** - a scalar shown as a number card. Good for counts.
+  `Unit: "bytes"` renders a human-readable byte value, and `Unit: "bytes/s"`
+  renders a human-readable byte rate. Other units are shown with a separating
+  space, such as `0.003 cores`.
 - **`Gauges`** - a radial gauge of the current value against `Max`. Use these
   sparingly for standalone scores. Do not also declare a usage row for the same
   value.
