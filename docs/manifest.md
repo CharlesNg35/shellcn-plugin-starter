@@ -226,12 +226,12 @@ which you read with `cfg.CredentialSecretFor(...)` (see
 Pick the layout from how your protocol is navigated, not from its category. Most
 plugins map cleanly onto four shapes:
 
-| Your protocol is...                                                        | Layout              | Typical panels                                                      |
-| -------------------------------------------------------------------------- | ------------------- | ------------------------------------------------------------------- |
-| **One screen** (a terminal workspace, file tree, or desktop)               | `LayoutSingle`      | one `PanelTerminalGrid` / `PanelFileBrowser` / `PanelRemoteDesktop` |
-| **A few flat views** (terminal + files, or browse + admin)                 | `LayoutTabs`        | a handful of `Tabs`                                                 |
+| Your protocol is...                                                           | Layout              | Typical panels                                                      |
+| ----------------------------------------------------------------------------- | ------------------- | ------------------------------------------------------------------- |
+| **One screen** (a terminal workspace, file tree, or desktop)                  | `LayoutSingle`      | one `PanelTerminalGrid` / `PanelFileBrowser` / `PanelRemoteDesktop` |
+| **A few flat views** (terminal + files, or browse + admin)                    | `LayoutTabs`        | a handful of `Tabs`                                                 |
 | **A big hierarchy** (databases->tables, namespaces->pods, topics->partitions) | `LayoutSidebarTree` | `Tree` + `Resources` with `DetailView`s                             |
-| **An at-a-glance board** (several charts/tables at once)                   | `LayoutDashboard`   | `Tabs` as dashboard cells                                           |
+| **An at-a-glance board** (several charts/tables at once)                      | `LayoutDashboard`   | `Tabs` as dashboard cells                                           |
 
 Rules of thumb:
 
@@ -280,31 +280,31 @@ data for the selected resource.
 
 ### Panel types and their config
 
-| `PanelType`          | Config type           | Renders                            |
-| -------------------- | --------------------- | ---------------------------------- |
-| `PanelTable`         | `TableConfig`         | A data grid (optionally editable). |
-| `PanelForm`          | `FormPanelConfig`     | A submit form.                     |
-| `PanelTerminal`      | `TerminalConfig`      | One xterm terminal (WS route).     |
-| `PanelTerminalGrid`  | `TerminalGridConfig`  | A split terminal workspace.        |
-| `PanelLogStream`     | -                     | A live log tail (WS route).        |
-| `PanelQueryEditor`   | `QueryEditorConfig`   | A SQL/query editor + results.      |
-| `PanelFileBrowser`   | `FileBrowserConfig`   | A file manager.                    |
-| `PanelCodeEditor`    | `CodeEditorConfig`    | A CodeMirror editor.               |
-| `PanelDiff`          | `DiffConfig`          | A read-only before/after diff.     |
-| `PanelMetrics`       | `MetricsConfig`       | KPI cards, usage rows, charts.     |
-| `PanelGraph`         | `GraphConfig`         | A node/edge graph.                 |
-| `PanelTrace`         | `TraceConfig`         | A distributed-trace view.          |
-| `PanelKV`            | `KVConfig`            | A key/value browser.               |
-| `PanelHTTPClient`    | `HTTPClientConfig`    | A REST client.                     |
-| `PanelRemoteDesktop` | `RemoteDesktopConfig` | A VNC/RDP screen.                  |
-| `PanelDocument`      | -                     | Rendered document/markdown.        |
-| `PanelDashboard`     | `DashboardConfig`     | A grid of nested panels (`Cells`). |
-| `PanelObjectDetail`  | `ObjectDetailConfig`  | A structured property sheet.       |
-| `PanelTimeline`      | `TimelineConfig`      | Events, tasks, or audit history.   |
-| `PanelTaskProgress`  | `TaskProgressConfig`  | A streamed long-running task.      |
-| `PanelSplit`         | `SplitConfig`         | Resizable child panel composition. |
-| `PanelCanvas`        | `CanvasConfig`        | Plugin-driven canvas draw/input.   |
-| `PanelWasm`          | `WasmConfig`          | A sandboxed WebAssembly app.       |
+| `PanelType`          | Config type           | Renders                             |
+| -------------------- | --------------------- | ----------------------------------- |
+| `PanelTable`         | `TableConfig`         | A data grid (optionally editable).  |
+| `PanelForm`          | `FormPanelConfig`     | A submit form.                      |
+| `PanelTerminal`      | `TerminalConfig`      | One xterm terminal (WS route).      |
+| `PanelTerminalGrid`  | `TerminalGridConfig`  | A split terminal workspace.         |
+| `PanelLogStream`     | -                     | A live log tail (WS route).         |
+| `PanelQueryEditor`   | `QueryEditorConfig`   | A SQL/query editor + results.       |
+| `PanelFileBrowser`   | `FileBrowserConfig`   | A file manager.                     |
+| `PanelCodeEditor`    | `CodeEditorConfig`    | A CodeMirror editor.                |
+| `PanelDiff`          | `DiffConfig`          | A read-only before/after diff.      |
+| `PanelMetrics`       | `MetricsConfig`       | KPI cards, usage rows, charts.      |
+| `PanelGraph`         | `GraphConfig`         | A node/edge graph.                  |
+| `PanelTrace`         | `TraceConfig`         | A distributed-trace view.           |
+| `PanelKV`            | `KVConfig`            | A key/value browser.                |
+| `PanelHTTPClient`    | `HTTPClientConfig`    | A REST client.                      |
+| `PanelRemoteDesktop` | `RemoteDesktopConfig` | A VNC/RDP screen.                   |
+| `PanelDocument`      | -                     | Rendered document/markdown.         |
+| `PanelDashboard`     | `DashboardConfig`     | A grid of nested panels (`Cells`).  |
+| `PanelObjectDetail`  | `ObjectDetailConfig`  | A structured property sheet.        |
+| `PanelTimeline`      | `TimelineConfig`      | Events, tasks, or audit history.    |
+| `PanelTaskProgress`  | `TaskProgressConfig`  | A streamed long-running task.       |
+| `PanelSplit`         | `SplitConfig`         | Resizable child panel composition.  |
+| `PanelCanvas`        | `CanvasConfig`        | Plugin-driven canvas draw/input.    |
+| `PanelWasm`          | `WasmConfig`          | A sandboxed WebAssembly app.        |
 | `PanelEnroll`        | -                     | Core-owned agent enrollment screen. |
 
 Each panel has a dedicated route and payload contract in the
@@ -514,8 +514,13 @@ how the container/k8s-style plugins build deep navigation - all declarative.
 
 `Scope` declares global selectors (a namespace picker, a region dropdown)
 injected into every read/stream route's params. Each `ScopeFilter` has a
-`Param`, `Label`, a `Control` (`ScopeSelect`, `ScopeMultiSelect`, `ScopeSearch`,
-`ScopeToggle`), and either static `Options` or an `OptionsSource`.
+`Param`, `Label`, a `Control` (`ScopeSelect`, `ScopeAutoComplete`,
+`ScopeSearch`, `ScopeToggle`), and either static `Options` or an
+`OptionsSource`.
+Use `Multiple: true` with `ScopeSelect` or `ScopeAutoComplete` for multi-value
+scopes; selected values are joined with `plugin.ScopeSeparator`.
+Autocomplete scopes are selection-only by default: typed text filters choices
+but is not submitted as a value unless `AllowCustom: true` is set.
 Route-sourced choices may also declare a `WatchSource` WebSocket `DataSource`
 that emits normal `ResourceEvent` frames; the renderer patches the selector
 choices when matching resources are added, updated, or deleted. Read the chosen

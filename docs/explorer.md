@@ -137,6 +137,7 @@ func databaseScope() plugin.ScopeFilter {
 // A namespace picker with an "All namespaces" entry.
 plugin.ScopeFilter{
     Param: "namespace", Label: "Namespace",
+    Control: plugin.ScopeAutoComplete,
     OptionsSource: &plugin.DataSource{RouteID: "myplugin.resource.list",
         Params: map[string]string{"kind": "namespace"}},
     WatchSource: &plugin.DataSource{RouteID: "myplugin.resource.watch",
@@ -147,8 +148,11 @@ plugin.ScopeFilter{
 ```
 
 In a handler: `rc.Param("namespace")`. For a multi-select scope, read it with
-`rc.ParamList("param", plugin.ScopeSeparator)`. `Control` picks the widget
-(`ScopeSelect` default, `ScopeMultiSelect`, `ScopeSearch`, `ScopeToggle`).
+`rc.ParamList("param", plugin.ScopeSeparator)`. `Control` picks the interaction
+family (`ScopeSelect` default, `ScopeAutoComplete`, `ScopeSearch`,
+`ScopeToggle`); set `Multiple: true` on select/autocomplete scopes for
+multi-value selection. Autocomplete is selection-only unless the plugin
+explicitly sets `AllowCustom: true`.
 Use `WatchSource` for choices that can change while the workspace is open
 (namespaces, databases, regions, projects). It must be a WebSocket route that
 emits `ResourceEvent` frames using the normal `added`, `updated`, and `deleted`
