@@ -21,6 +21,7 @@ plugin.Panel{
 }
 ```
 
-Child panels are normal panels. Keep nesting shallow. If a split becomes a
-custom application layout, reconsider whether standard workspace resources and
-detail tabs would be clearer.
+Child panels are normal panels. They may use `VisibleWhen` to hide a side of the
+split when the active row does not support it. Keep nesting shallow. If a split
+becomes a custom application layout, reconsider whether standard workspace
+resources and detail tabs would be clearer.

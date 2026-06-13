@@ -18,5 +18,6 @@ plugin.Panel{Key: "overview", Label: "Overview", Type: plugin.PanelDashboard, Co
 ```
 
 Dashboard cells are normal panels and follow their own route/config contracts.
-`Span` is a sizing hint for grid width. Avoid nesting dashboards inside
-dashboards.
+`Span` is a sizing hint for grid width. A cell may set `VisibleWhen` to hide
+itself when the active row does not support that view. Avoid nesting dashboards
+inside dashboards.

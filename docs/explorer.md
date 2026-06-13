@@ -259,17 +259,20 @@ An action is just a button wired to a route, but a few fields make it safe and
 usable:
 
 ```go
-plugin.Action{
-    ID: "act.qemu.stop", Label: "Stop", Icon: icon("square"),
-    RouteID:     "myplugin.guest.stop",
-    Confirm:     true,                                   // ask before firing
-    ConfirmText: "Force stop this guest? Unsaved state is lost.",
-    EnabledWhen: &plugin.Condition{AllOf: []plugin.Rule{ // grey out unless it applies
-        {Field: "status", Op: plugin.OpIn, Value: []string{"running"}},
-    }},
-    Group:     "Power",                                       // cluster into a dropdown
-    OnSuccess: &plugin.ActionSuccess{SelectTab: "snapshots"}, // focus a tab after
-}
+	plugin.Action{
+	    ID: "act.qemu.stop", Label: "Stop", Icon: icon("square"),
+	    RouteID:     "myplugin.guest.stop",
+	    Confirm:     true,                                   // ask before firing
+	    ConfirmText: "Force stop this guest? Unsaved state is lost.",
+	    EnabledWhen: &plugin.Condition{AllOf: []plugin.Rule{ // grey out unless it applies
+	        {Field: "status", Op: plugin.OpIn, Value: []string{"running"}},
+	    }},
+	    VisibleWhen: &plugin.Condition{AllOf: []plugin.Rule{ // hide when the resource cannot support it
+	        {Field: "template", Op: plugin.OpNeq, Value: true},
+	    }},
+	    Group:     "Power",                                       // cluster into a dropdown
+	    OnSuccess: &plugin.ActionSuccess{SelectTab: "snapshots"}, // focus a tab after
+	}
 ```
 
 - **`Confirm` + `ConfirmText`** on anything destructive or disruptive (stop,
@@ -279,6 +282,11 @@ plugin.Action{
   (`AllOf`/`AnyOf` of `{Field, Op, Value}`; ops `OpEq`, `OpNeq`, `OpIn`, `OpNin`,
   `OpEmpty`, `OpNotEmpty`). This is UX only; the gateway still enforces the route's
   risk server-side.
+- **`VisibleWhen`** hides actions that make no sense for the active row - for
+  example power controls on VM templates or exec/log actions on resources that do
+  not expose a runtime. Prefer hiding only when the action is conceptually
+  impossible; use `EnabledWhen` when the action exists but is temporarily blocked
+  by state.
 - **`Group`** collects related actions (Power, Snapshots) into one labeled
   dropdown instead of a wall of buttons.
 - **`OnSuccess.SelectTab`** moves the user to the relevant tab after success (take

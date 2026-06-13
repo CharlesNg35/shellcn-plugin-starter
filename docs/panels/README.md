@@ -26,6 +26,12 @@ The `myplugin.*` route IDs in these panel examples assume a plugin with
 `Manifest.Name`; the SDK validator enforces that route IDs start with
 `Manifest.Name + "."`.
 
+Set `VisibleWhen` on a panel when a tab or dashboard/split child is meaningful
+only for some rows. The condition is evaluated against the active row/resource,
+using the same `Condition` shape as form fields and actions. This keeps detail
+views honest: do not show runtime metrics, shells, consoles, or rollback tabs for
+objects that cannot produce them.
+
 ## Choose the standard panel first
 
 | Task | Preferred panel |

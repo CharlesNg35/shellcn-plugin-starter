@@ -260,8 +260,8 @@ Resources: []plugin.ResourceType{ /* "table": list columns + DetailView with a d
 ## Panels (`Tabs`)
 
 A `Panel` is one screen. It has a `Key`, `Label`, `Icon`, a `Type`, an optional
-`Source` (`*DataSource` binding it to a route), and a `Config` shaped for the
-type.
+`Source` (`*DataSource` binding it to a route), a `Config` shaped for the type,
+and optional `VisibleWhen` gating.
 
 ```go
 Tabs: []plugin.Panel{{
@@ -271,6 +271,12 @@ Tabs: []plugin.Panel{{
     Config: plugin.TableConfig{ /* ... */ },
 }},
 ```
+
+`VisibleWhen` hides a panel when the active resource row does not match. Use it
+for context-specific tabs such as a console that exists only while a VM is not a
+template, logs that exist only for running workloads, or metrics that exist only
+when a backend supports live samples. Do not show a tab that can never load useful
+data for the selected resource.
 
 ### Panel types and their config
 
@@ -479,6 +485,8 @@ Useful `Action` fields:
   (`OpenDialog`), the main view (`OpenView`), or a new browser tab (`OpenURL`,
   using the route-returned URL).
 - `EnabledWhen` - a `*Condition` over the active row's fields to gray out the button.
+- `VisibleWhen` - a `*Condition` over the active row's fields to hide actions that
+  do not apply to the selected resource.
 - `Group` - cluster actions into a labeled dropdown. `IconOnly` - icon button + tooltip.
 
 Reference actions from a panel's `ActionIDs`/`RowActionIDs`, a resource's
