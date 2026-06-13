@@ -313,6 +313,26 @@ SDK types are still the source of truth for field names, but the panel docs
 explain which route method to use, what the route should return, and common
 mistakes.
 
+Use `Panel.Variants` when one logical tab should switch renderer/config from
+connection or row state. Do not duplicate tabs just to choose between generic
+renderers. The first variant whose `VisibleWhen` matches wins; otherwise the
+panel's base `Type`/`Config` is used.
+
+```go
+plugin.Panel{
+    Key: "terminal", Label: "Terminal", Type: plugin.PanelTerminal,
+    Source: &plugin.DataSource{RouteID: "ssh.shell", Method: plugin.MethodWS},
+    Config: plugin.TerminalConfig{Zoom: true, Search: true},
+    Variants: []plugin.PanelVariant{{
+        Type:   plugin.PanelTerminalGrid,
+        Config: plugin.TerminalGridConfig{MaxPanes: 6, Zoom: true, Search: true},
+        VisibleWhen: &plugin.Condition{AllOf: []plugin.Rule{{
+            Field: "terminal_layout", Op: plugin.OpEq, Value: "grid",
+        }}},
+    }},
+}
+```
+
 Use the most structured panel that fits the data:
 
 - Use `PanelObjectDetail` for typed fields, copy buttons, badges, redaction, and
