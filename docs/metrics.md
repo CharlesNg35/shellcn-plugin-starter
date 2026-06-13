@@ -48,12 +48,20 @@ plugin.Panel{
 - **`Usage`** - the same usage rows as `PanelObjectDetail`, useful when a live
   metric should read as used/capacity instead of just a chart. Prefer this for
   CPU, memory, disk, quota, pool, and queue capacity. Declare each row with
-  `MetricUsage{Usage: &plugin.UsageSpec{...}}`.
+  `MetricUsage{Usage: &plugin.UsageSpec{...}}`. Do not use it for soft
+  baselines such as Kubernetes pod requests when a stat card already presents
+  the current and requested values clearly.
 - **`Series`** - one line on a shared time chart; new frames append a point and
   `History` bounds how many are kept.
 - A key can appear in **both** `Usage` and `Series`; the same frame value feeds a
   current usage row and a trend line. Avoid declaring the same key in `Gauges`
   and `Usage`.
+
+Keep the panel simple: pick the smallest set of widgets that answers the
+operator's question. Use stat cards for standalone values, usage rows for real
+used/total capacity, gauges only for standalone scores, and series for trend
+history. Do not show the same value twice unless the second view adds different
+information.
 
 ## The frame contract
 

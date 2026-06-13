@@ -36,7 +36,12 @@ plugin.Stream{ID: "myplugin.metrics", Kind: plugin.StreamMetrics, RouteID: "mypl
 The stream writes JSON snapshots:
 
 ```json
-{ "requests": 42, "cpu": 17.4 }
+{
+  "requests": 42,
+  "cpuPct": 17.4,
+  "cpuUsed": 1.4,
+  "cpuTotal": 8
+}
 ```
 
 Write the first frame immediately, then tick. Prefer partial frames over killing
