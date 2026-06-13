@@ -515,9 +515,12 @@ how the container/k8s-style plugins build deep navigation - all declarative.
 `Scope` declares global selectors (a namespace picker, a region dropdown)
 injected into every read/stream route's params. Each `ScopeFilter` has a
 `Param`, `Label`, a `Control` (`ScopeSelect`, `ScopeMultiSelect`, `ScopeSearch`,
-`ScopeToggle`), and either static `Options` or an `OptionsSource`. Read the
-chosen value in a handler with `rc.Param("<param>")`; for multi-select scopes,
-use `rc.ParamList("<param>", plugin.ScopeSeparator)`.
+`ScopeToggle`), and either static `Options` or an `OptionsSource`.
+Route-sourced choices may also declare a `WatchSource` WebSocket `DataSource`
+that emits normal `ResourceEvent` frames; the renderer patches the selector
+choices when matching resources are added, updated, or deleted. Read the chosen
+value in a handler with `rc.Param("<param>")`; for multi-select scopes, use
+`rc.ParamList("<param>", plugin.ScopeSeparator)`.
 
 ## Transports
 

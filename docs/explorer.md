@@ -139,6 +139,8 @@ plugin.ScopeFilter{
     Param: "namespace", Label: "Namespace",
     OptionsSource: &plugin.DataSource{RouteID: "myplugin.resource.list",
         Params: map[string]string{"kind": "namespace"}},
+    WatchSource: &plugin.DataSource{RouteID: "myplugin.resource.watch",
+        Method: plugin.MethodWS, Params: map[string]string{"kind": "namespace"}},
     ValueField: "name",
     AllLabel:   "All namespaces", // empty value = no filter
 }
@@ -147,6 +149,10 @@ plugin.ScopeFilter{
 In a handler: `rc.Param("namespace")`. For a multi-select scope, read it with
 `rc.ParamList("param", plugin.ScopeSeparator)`. `Control` picks the widget
 (`ScopeSelect` default, `ScopeMultiSelect`, `ScopeSearch`, `ScopeToggle`).
+Use `WatchSource` for choices that can change while the workspace is open
+(namespaces, databases, regions, projects). It must be a WebSocket route that
+emits `ResourceEvent` frames using the normal `added`, `updated`, and `deleted`
+types.
 
 Prefer a **narrow `DefaultValue`** so the first paint is bounded, for example
 database `0` instead of all databases. Only default to an "all" scope (via
