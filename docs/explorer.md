@@ -301,6 +301,26 @@ usable:
   dropdown instead of a wall of buttons.
 - **`OnSuccess.SelectTab`** moves the user to the relevant tab after success (take
   a snapshot, land on the Snapshots tab).
+- **`OnSuccess.Effects`** runs typed generic UI effects after success. Use a
+  `terminal_input` effect when an action selects a saved command and the user
+  should see it run in the visible shell instead of in a hidden background exec:
+
+```go
+OnSuccess: &plugin.ActionSuccess{
+    SelectTab: "terminal",
+    Effects: []plugin.ActionEffect{{
+        Type: plugin.ActionEffectTerminalInput,
+        TerminalInput: &plugin.TerminalInputEffect{
+            Tab: "terminal", ResultField: "command", AppendNewline: true,
+        },
+    }},
+}
+```
+
+The action route returns the command field, for example
+`map[string]any{"ok": true, "command": "systemctl status nginx"}`. For
+`PanelTerminalGrid`, ShellCN sends input to the active pane; if no active pane is
+known yet, it targets the first pane.
 
 ## Editable grids (the database "data" tab)
 
