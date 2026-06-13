@@ -478,6 +478,10 @@ Actions: []plugin.Action{
 Useful `Action` fields:
 
 - `Params` - templated route params (e.g. `${resource.uid}`).
+- Route `Input` field defaults may also use `${resource.uid}` and
+  `${resource.name}` for row/detail actions. The renderer resolves them from the
+  selected resource before opening the form, so dialogs can be prefilled without
+  plugin-specific frontend code.
 - `Confirm` / `ConfirmText` - a confirmation dialog before firing.
 - `OnSuccess` - `{SelectTab, Navigate}` to move the workbench after success
   (`NavigateList` returns to the list).

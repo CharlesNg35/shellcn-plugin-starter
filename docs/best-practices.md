@@ -186,7 +186,9 @@ for secrets.
 
 `cfg.String(key)` returns `""` if absent/non-string; `cfg.Int(key)` returns
 `(0, false)`. **Schema `Default`s are UI hints, not runtime defaults** - apply
-fallbacks in code, and validate:
+fallbacks in code, and validate. For action forms, string defaults may use
+`${resource.uid}` or `${resource.name}` to prefill from the selected row, but the
+route must still validate the submitted value:
 
 ```go
 host := strings.TrimSpace(cfg.String("host"))
