@@ -187,21 +187,29 @@ by kind:
 Built-in kinds: `CredentialDBPassword`, `CredentialAPIToken`,
 `CredentialBasicAuth`, `CredentialBearerToken`, `CredentialTLSClientCert`,
 `CredentialCloudAccessKey`. To define your own kind, list `CredentialKindInfo`
-entries in `Manifest.CredentialKinds`:
+entries in `Manifest.CredentialKinds`. Credential kinds reuse `plugin.Field`
+for their form fields, but only `FieldText`, `FieldPassword`, and
+`FieldTextarea` are valid. Mark secret material with `Secret: true`; mark safe
+display metadata with `Public: true`. Every credential field must be one of
+those two persisted categories.
 
 ```go
 CredentialKinds: []plugin.CredentialKindInfo{{
-    Kind:          "acme_api_key",
-    Label:         "ACME API key",
-    SecretLabel:   "API key",   // labels the secret input in the credential form
-    IdentityLabel: "Key ID",    // optional non-secret identity (e.g. username/key id)
+    Kind:  "acme_api_key",
+    Label: "ACME API key",
+    Fields: []plugin.Field{
+        plugin.CredentialPublicField(plugin.Field{Key: "key_id", Label: "Key ID", Type: plugin.FieldText, Required: true}),
+        plugin.CredentialSecretField(plugin.Field{Key: "api_key", Label: "API key", Type: plugin.FieldPassword, Required: true}),
+    },
 }},
 ```
 
 Reference it from a `credential_ref` field's `CredentialSelector{Kind: ...}`. The
-field stores only the credential id; the gateway resolves and injects the secret,
-which you read with `cfg.CredentialSecretFor(...)` (see
-[sessions.md](sessions.md)). The client never sees it.
+field stores only the credential id. At connect time the gateway resolves and
+injects a field-value map, which you read with
+`cfg.CredentialValueFor("credential", "api_key")` or
+`cfg.CredentialValuesFor("credential")` (see [credentials.md](credentials.md)).
+The client never sees secret values.
 
 Use one `credential_ref` field per credential kind. Do not make one field accept
 several kinds; model alternatives as separate fields with explicit labels and

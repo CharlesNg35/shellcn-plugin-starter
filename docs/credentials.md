@@ -42,7 +42,7 @@ Declare a `credential_ref` field when the user should pick a reusable credential
 
 ```go
 plugin.Field{
-    Key:   plugin.CredentialField,
+    Key:   plugin.CredentialIDField,
     Label: "Credential",
     Type:  plugin.FieldCredentialRef,
     Credential: &plugin.CredentialSelector{
@@ -53,22 +53,23 @@ plugin.Field{
 ```
 
 The saved connection stores only the credential id. At connect time the gateway
-resolves the credential and injects derived config keys. Read them through the
-helpers:
+resolves the credential and injects a map of the credential's declared fields.
+Read values through the helpers:
 
 ```go
 user := cfg.String("username")
-if id := cfg.CredentialIdentityFor(plugin.CredentialField); id != "" {
-    user = id
+if storedUser := cfg.CredentialValueFor(plugin.CredentialIDField, "username"); storedUser != "" {
+    user = storedUser
 }
-password := cfg.CredentialSecretFor(plugin.CredentialField)
-kind := cfg.CredentialKindFor(plugin.CredentialField)
+password := cfg.CredentialValueFor(plugin.CredentialIDField, "password")
+kind := cfg.CredentialKindFor(plugin.CredentialIDField)
 ```
 
 For a non-standard field key, pass that key:
 
 ```go
-secret := cfg.CredentialSecretFor("api_credential")
+token := cfg.CredentialValueFor("api_credential", "token")
+values := cfg.CredentialValuesFor("api_credential")
 ```
 
 Each `FieldCredentialRef` selector declares one credential kind. If a protocol
@@ -98,10 +99,12 @@ Declare custom kinds in `Manifest.CredentialKinds`:
 
 ```go
 CredentialKinds: []plugin.CredentialKindInfo{{
-    Kind:          "acme_api_key",
-    Label:         "ACME API key",
-    SecretLabel:   "API key",
-    IdentityLabel: "Key ID",
+    Kind:  "acme_api_key",
+    Label: "ACME API key",
+    Fields: []plugin.Field{
+        plugin.CredentialPublicField(plugin.Field{Key: "key_id", Label: "Key ID", Type: plugin.FieldText, Required: true}),
+        plugin.CredentialSecretField(plugin.Field{Key: "api_key", Label: "API key", Type: plugin.FieldPassword, Required: true}),
+    },
 }},
 ```
 
@@ -109,6 +112,61 @@ Then reference that kind from a `CredentialSelector`.
 
 Only create a custom kind when the secret material has protocol-specific meaning
 that does not fit the SDK kinds.
+
+Credential kind fields intentionally support a small safe subset of schema
+features:
+
+- `FieldText` for non-secret metadata such as username, subject, key id, tenant,
+  account id, or profile name.
+- `FieldPassword` for short secret values such as passwords, API keys, tokens,
+  and access-key secrets.
+- `FieldTextarea` for multi-line secret values such as PEM certificates,
+  private keys, kubeconfigs, or JSON credentials.
+
+Every credential field must be persisted as either secret material or non-secret
+public metadata. Prefer `plugin.CredentialSecretField(...)` for sensitive
+values and `plugin.CredentialPublicField(...)` for safe display metadata. Do
+not rely on custom frontend code; the gateway renders credential fields from
+this declaration.
+
+### Examples
+
+Stored password:
+
+```go
+Fields: []plugin.Field{
+    plugin.CredentialPublicField(plugin.Field{Key: "username", Label: "Username", Type: plugin.FieldText, Required: true}),
+    plugin.CredentialSecretField(plugin.Field{Key: "password", Label: "Password", Type: plugin.FieldPassword, Required: true}),
+}
+```
+
+Stored token:
+
+```go
+Fields: []plugin.Field{
+    plugin.CredentialPublicField(plugin.Field{Key: "subject", Label: "Token subject", Type: plugin.FieldText}),
+    plugin.CredentialSecretField(plugin.Field{Key: "token", Label: "Token", Type: plugin.FieldPassword, Required: true}),
+}
+```
+
+Stored client certificate:
+
+```go
+Fields: []plugin.Field{
+    plugin.CredentialPublicField(plugin.Field{Key: "subject", Label: "Certificate subject", Type: plugin.FieldText}),
+    plugin.CredentialSecretField(plugin.Field{Key: "certificate", Label: "Client certificate", Type: plugin.FieldTextarea, Required: true}),
+    plugin.CredentialSecretField(plugin.Field{Key: "private_key", Label: "Private key", Type: plugin.FieldTextarea, Required: true}),
+    plugin.CredentialSecretField(plugin.Field{Key: "passphrase", Label: "Private key passphrase", Type: plugin.FieldPassword}),
+}
+```
+
+Connect-time use:
+
+```go
+cert := cfg.CredentialValueFor("client_cert_id", "certificate")
+key := cfg.CredentialValueFor("client_cert_id", "private_key")
+bundle := strings.TrimSpace(cert + "\n" + key)
+```
 
 ## Transport-aware forms
 
@@ -136,7 +194,7 @@ not be needed.
 - Do not put tokens in route params, URLs, logs, metadata, or audit params.
 - Prefer reusable credentials for passwords, API tokens, cloud keys, and client
   certificates.
-- Keep credential identity non-secret: username, key id, account id, or profile
-  name is fine.
+- Keep public fields non-secret: username, key id, account id, or profile name
+  is fine.
 - Wrap backend auth failures as `plugin.ErrUnauthorized` or
   `plugin.ErrForbidden` with useful context.

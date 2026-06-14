@@ -128,11 +128,11 @@ plugin never sees ciphertext or persists a secret:
 ```go
 user := cfg.String("username")
 pass := cfg.String("password")
-if id := cfg.CredentialIdentityFor(plugin.CredentialField); id != "" {
-    user = id // the credential can supply the username too
+if storedUser := cfg.CredentialValueFor(plugin.CredentialIDField, "username"); storedUser != "" {
+    user = storedUser // the credential can supply the username too
 }
-if secret := cfg.CredentialSecretFor(plugin.CredentialField); secret != "" {
-    pass = secret
+if storedPassword := cfg.CredentialValueFor(plugin.CredentialIDField, "password"); storedPassword != "" {
+    pass = storedPassword
 }
 ```
 
