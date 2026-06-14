@@ -126,7 +126,7 @@ chosen credential and attaches it to `cfg.Credentials`; read it with the
 credential accessors - your plugin never sees ciphertext or persists a secret:
 
 ```go
-cred, err := cfg.RequiredCredentialFor(plugin.CredentialIDField, plugin.CredentialDBPassword)
+cred, err := cfg.RequiredCredentialFor(plugin.CredentialRefField, plugin.CredentialKindDBPassword)
 if err != nil {
     return nil, err
 }

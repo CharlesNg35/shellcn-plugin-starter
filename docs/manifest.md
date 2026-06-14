@@ -178,14 +178,14 @@ by kind:
 {
     Key: "credential", Label: "Credential", Type: plugin.FieldCredentialRef, Required: true,
     Credential: &plugin.CredentialSelector{
-        Kind: plugin.CredentialDBPassword,
+        Kind: plugin.CredentialKindDBPassword,
     },
 },
 ```
 
-Built-in kinds: `CredentialDBPassword`, `CredentialAPIToken`,
-`CredentialBasicAuth`, `CredentialBearerToken`, `CredentialTLSClientCert`,
-`CredentialCloudAccessKey`. To define your own kind, list `CredentialKindInfo`
+Built-in kinds: `CredentialKindDBPassword`, `CredentialKindAPIToken`,
+`CredentialKindBasicAuth`, `CredentialKindBearerToken`, `CredentialKindTLSClientCert`,
+`CredentialKindCloudAccessKey`. To define your own kind, list `CredentialKindInfo`
 entries in `Manifest.CredentialKinds`. Credential kinds reuse `plugin.Field`
 for their form fields, but only `FieldText`, `FieldPassword`, and
 `FieldTextarea` are valid. Mark secret material with `Secret: true`; mark safe

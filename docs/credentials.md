@@ -42,12 +42,12 @@ Declare a `credential_ref` field when the user should pick a reusable credential
 
 ```go
 plugin.Field{
-    Key:      plugin.CredentialIDField,
+    Key:      plugin.CredentialRefField,
     Label:    "Credential",
     Type:     plugin.FieldCredentialRef,
     Required: true,
     Credential: &plugin.CredentialSelector{
-        Kind: plugin.CredentialDBPassword,
+        Kind: plugin.CredentialKindDBPassword,
     },
 }
 ```
@@ -58,7 +58,7 @@ resolves the credential and attaches its declared fields to
 values through the helpers:
 
 ```go
-cred, err := cfg.RequiredCredentialFor(plugin.CredentialIDField, plugin.CredentialDBPassword)
+cred, err := cfg.RequiredCredentialFor(plugin.CredentialRefField, plugin.CredentialKindDBPassword)
 if err != nil {
     return nil, err
 }
@@ -93,14 +93,14 @@ explicitly in `Connect` based on the selected auth mode.
 
 Common SDK kinds include:
 
-- `CredentialSSHPrivateKey`
-- `CredentialSSHPassword`
-- `CredentialTLSClientCert`
-- `CredentialDBPassword`
-- `CredentialAPIToken`
-- `CredentialCloudAccessKey`
-- `CredentialBasicAuth`
-- `CredentialBearerToken`
+- `CredentialKindSSHPrivateKey`
+- `CredentialKindSSHPassword`
+- `CredentialKindTLSClientCert`
+- `CredentialKindDBPassword`
+- `CredentialKindAPIToken`
+- `CredentialKindCloudAccessKey`
+- `CredentialKindBasicAuth`
+- `CredentialKindBearerToken`
 
 Use the closest existing kind when possible. Operators understand these labels
 and ShellCN can reuse them across protocols.
@@ -175,7 +175,7 @@ Fields: []plugin.Field{
 Connect-time use:
 
 ```go
-cred, err := cfg.RequiredCredentialFor("client_cert_id", plugin.CredentialTLSClientCert)
+cred, err := cfg.RequiredCredentialFor("client_cert_id", plugin.CredentialKindTLSClientCert)
 if err != nil {
     return nil, err
 }
