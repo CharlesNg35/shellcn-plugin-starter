@@ -49,15 +49,20 @@ Guard shared session state - a session can serve concurrent requests.
 ```go
 type ConnectConfig struct {
     ConnectionID string
-    Transport    Transport       // "direct" or "agent"
-    Config       map[string]any  // decrypted form values
-    Net          NetTransport    // reach the target through here
-    Storage      Storage         // plugin-owned scoped persistence
+    Transport    Transport           // "direct" or "agent"
+    Config       map[string]any      // decrypted form values
+    Credentials  ResolvedCredentials // resolved reusable credentials by config field
+    Net          NetTransport        // reach the target through here
+    Storage      Storage             // plugin-owned scoped persistence
 }
 ```
 
 Read config values with the typed helpers: `cfg.String("host")`,
 `cfg.Int("port")`. Secret fields are already decrypted.
+
+Read reusable credentials from `cfg.Credentials` with `cfg.CredentialFor(field)`
+or `cfg.RequiredCredentialFor(field, kind)`. Credential values are not merged
+into `Config`, so config keys and credential field keys cannot collide.
 
 `Storage` is the same scoped plugin storage surface exposed as `rc.Storage` in
 route handlers. Prefer `rc.Storage` for request-driven saved objects because it

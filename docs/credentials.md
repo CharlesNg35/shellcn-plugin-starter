@@ -42,40 +42,52 @@ Declare a `credential_ref` field when the user should pick a reusable credential
 
 ```go
 plugin.Field{
-    Key:   plugin.CredentialIDField,
-    Label: "Credential",
-    Type:  plugin.FieldCredentialRef,
+    Key:      plugin.CredentialIDField,
+    Label:    "Credential",
+    Type:     plugin.FieldCredentialRef,
+    Required: true,
     Credential: &plugin.CredentialSelector{
-        Kind:     plugin.CredentialDBPassword,
-        Required: true,
+        Kind: plugin.CredentialDBPassword,
     },
 }
 ```
 
 The saved connection stores only the credential id. At connect time the gateway
-resolves the credential and injects a map of the credential's declared fields.
-Read values through the helpers:
+resolves the credential and attaches its declared fields to
+`ConnectConfig.Credentials`, keyed by the credential reference field. Read
+values through the helpers:
 
 ```go
-user := cfg.String("username")
-if storedUser := cfg.CredentialValueFor(plugin.CredentialIDField, "username"); storedUser != "" {
-    user = storedUser
+cred, err := cfg.RequiredCredentialFor(plugin.CredentialIDField, plugin.CredentialDBPassword)
+if err != nil {
+    return nil, err
 }
-password := cfg.CredentialValueFor(plugin.CredentialIDField, "password")
-kind := cfg.CredentialKindFor(plugin.CredentialIDField)
+
+user, err := cred.RequiredValue("username")
+if err != nil {
+    return nil, err
+}
+password, err := cred.RequiredValue("password")
+if err != nil {
+    return nil, err
+}
 ```
 
 For a non-standard field key, pass that key:
 
 ```go
 token := cfg.CredentialValueFor("api_credential", "token")
-values := cfg.CredentialValuesFor("api_credential")
+cred, ok := cfg.CredentialFor("api_credential")
 ```
 
 Each `FieldCredentialRef` selector declares one credential kind. If a protocol
 supports alternative stored credentials, such as a stored password and a stored
 private key, expose separate fields with separate `VisibleWhen` rules. This keeps
 stored config keys, labels, and credential creation predictable.
+
+When a credential contains a field that also exists in inline config, such as
+`username`, do not merge the credential into `Config`. Choose the source
+explicitly in `Connect` based on the selected auth mode.
 
 ## SDK credential kinds
 
@@ -163,8 +175,18 @@ Fields: []plugin.Field{
 Connect-time use:
 
 ```go
-cert := cfg.CredentialValueFor("client_cert_id", "certificate")
-key := cfg.CredentialValueFor("client_cert_id", "private_key")
+cred, err := cfg.RequiredCredentialFor("client_cert_id", plugin.CredentialTLSClientCert)
+if err != nil {
+    return nil, err
+}
+cert, err := cred.RequiredValue("certificate")
+if err != nil {
+    return nil, err
+}
+key, err := cred.RequiredValue("private_key")
+if err != nil {
+    return nil, err
+}
 bundle := strings.TrimSpace(cert + "\n" + key)
 ```
 
@@ -194,6 +216,8 @@ not be needed.
 - Do not put tokens in route params, URLs, logs, metadata, or audit params.
 - Prefer reusable credentials for passwords, API tokens, cloud keys, and client
   certificates.
+- Put requiredness on the `FieldCredentialRef` field with `Required: true`, not
+  on `CredentialSelector`.
 - Keep public fields non-secret: username, key id, account id, or profile name
   is fine.
 - Wrap backend auth failures as `plugin.ErrUnauthorized` or

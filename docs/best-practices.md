@@ -122,19 +122,27 @@ transport to the SDK's HTTP client.
 ## Credentials: read the resolved secret, never store one
 
 Prefer a `FieldCredentialRef` over inline secret fields. The gateway decrypts the
-chosen credential and injects it into `cfg`; read it with the accessors - your
-plugin never sees ciphertext or persists a secret:
+chosen credential and attaches it to `cfg.Credentials`; read it with the
+credential accessors - your plugin never sees ciphertext or persists a secret:
 
 ```go
-user := cfg.String("username")
-pass := cfg.String("password")
-if storedUser := cfg.CredentialValueFor(plugin.CredentialIDField, "username"); storedUser != "" {
-    user = storedUser // the credential can supply the username too
+cred, err := cfg.RequiredCredentialFor(plugin.CredentialIDField, plugin.CredentialDBPassword)
+if err != nil {
+    return nil, err
 }
-if storedPassword := cfg.CredentialValueFor(plugin.CredentialIDField, "password"); storedPassword != "" {
-    pass = storedPassword
+user, err := cred.RequiredValue("username")
+if err != nil {
+    return nil, err
+}
+pass, err := cred.RequiredValue("password")
+if err != nil {
+    return nil, err
 }
 ```
+
+If inline config and a reusable credential can both carry the same key, such as
+`username`, keep them separate and choose the source explicitly from the selected
+auth mode. Do not merge credential values into `cfg.Config`.
 
 ## Plugin storage: keep scope simple
 

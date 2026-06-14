@@ -176,10 +176,9 @@ by kind:
 
 ```go
 {
-    Key: "credential", Label: "Credential", Type: plugin.FieldCredentialRef,
+    Key: "credential", Label: "Credential", Type: plugin.FieldCredentialRef, Required: true,
     Credential: &plugin.CredentialSelector{
-        Kind:     plugin.CredentialDBPassword,
-        Required: true,
+        Kind: plugin.CredentialDBPassword,
     },
 },
 ```
@@ -206,10 +205,11 @@ CredentialKinds: []plugin.CredentialKindInfo{{
 
 Reference it from a `credential_ref` field's `CredentialSelector{Kind: ...}`. The
 field stores only the credential id. At connect time the gateway resolves and
-injects a field-value map, which you read with
-`cfg.CredentialValueFor("credential", "api_key")` or
-`cfg.CredentialValuesFor("credential")` (see [credentials.md](credentials.md)).
-The client never sees secret values.
+attaches a `ResolvedCredential` to `ConnectConfig.Credentials`, keyed by the
+credential reference field. Read it with `cfg.CredentialFor("credential")`,
+`cfg.RequiredCredentialFor("credential", kind)`, or the small value helpers
+described in [credentials.md](credentials.md). The client never sees secret
+values.
 
 Use one `credential_ref` field per credential kind. Do not make one field accept
 several kinds; model alternatives as separate fields with explicit labels and
