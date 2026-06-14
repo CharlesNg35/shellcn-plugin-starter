@@ -65,7 +65,7 @@ func (Starter) Manifest() plugin.Manifest {
 
 		// Actions bind a button to a route. An action with an Input schema opens
 		// a form. Row actions can use ${record.key} from the selected table row;
-		// use ${resource.uid} only when the row returns a ResourceRef.
+		// use ${resource.uid} only when the row returns a ResourceIdentity.
 		Actions: []plugin.Action{
 			{ID: "starter.set", Label: "Set entry", Icon: icon("plus"), RouteID: "starter.set"},
 			{

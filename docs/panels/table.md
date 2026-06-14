@@ -60,7 +60,7 @@ When rows open a resource detail, return a `ref` field:
 
 ```go
 type itemRow struct {
-    Ref   plugin.ResourceRef `json:"ref"`
+    Ref   plugin.ResourceIdentity `json:"ref"`
     Name  string             `json:"name"`
     State string             `json:"state"`
 }

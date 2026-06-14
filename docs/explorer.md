@@ -45,7 +45,7 @@ plugin.TreeNode{
 }
 // or, to open a single resource's detail:
 plugin.TreeNode{Key: "...", Label: name,
-    Ref: &plugin.ResourceRef{Kind: "storage", Namespace: node, Name: name, UID: name}, Leaf: true}
+    Ref: &plugin.ResourceIdentity{Kind: "storage", Namespace: node, Name: name, UID: name}, Leaf: true}
 // or, to expand deeper lazily:
 plugin.TreeNode{Key: "...", Label: name,
     ChildrenSource: &plugin.DataSource{RouteID: "x.tree.children", Params: map[string]string{"parent": name}}}
