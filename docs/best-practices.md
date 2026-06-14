@@ -322,13 +322,13 @@ expects to inspect and act on that target:
 
   ```go
   type Row struct {
-      Ref   plugin.ResourceRef `json:"ref"`
+      Ref   plugin.ResourceIdentity `json:"ref"`
       Name  string             `json:"name"`
       State string             `json:"state"`
   }
 
   row := Row{
-      Ref: plugin.ResourceRef{
+      Ref: plugin.ResourceIdentity{
           Kind: "container",
           Name: "web",
           UID:  "7f4c...",
