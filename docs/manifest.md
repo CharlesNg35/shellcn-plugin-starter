@@ -464,8 +464,11 @@ A panel (or column source, watch, action) binds to a route by id:
 ```
 
 The gateway resolves `RouteID` + `Params` to a URL. Params interpolate from the
-active resource (`${resource.uid}`, `${resource.namespace}`), scope filters
-(`${scope.<param>}`), or static values.
+active resource (`${resource.uid}`, `${resource.namespace}`), the active row/data
+record (`${record.key}`, `${record.metadata.name}`), scope filters
+(`${scope.<param>}`), or static values. Use `${resource.*}` when a row has a
+real `ref` and opens a resource detail. Use `${record.*}` for plain table rows
+that are not resources.
 
 ### TableConfig (the workhorse)
 
@@ -507,7 +510,7 @@ Actions: []plugin.Action{
     {ID: "myplugin.set", Label: "Set entry", Icon: icon("plus"), RouteID: "myplugin.set"},
     {
         ID: "myplugin.delete", Label: "Delete", Icon: icon("trash-2"), RouteID: "myplugin.delete",
-        Params:      map[string]string{"key": "${resource.uid}"},
+        Params:      map[string]string{"key": "${record.key}"},
         Confirm:     true, ConfirmText: "Delete this entry?",
     },
 },
@@ -515,11 +518,11 @@ Actions: []plugin.Action{
 
 Useful `Action` fields:
 
-- `Params` - templated route params (e.g. `${resource.uid}`).
-- Route `Input` field defaults may also use `${resource.uid}` and
-  `${resource.name}` for row/detail actions. The renderer resolves them from the
-  selected resource before opening the form, so dialogs can be prefilled without
-  plugin-specific frontend code.
+- `Params` - templated route params (e.g. `${resource.uid}` for resource actions
+  or `${record.key}` for plain row actions).
+- Route `Input` field defaults may also use `${resource.*}` and `${record.*}` for
+  row/detail actions. The renderer resolves them before opening the form, so
+  dialogs can be prefilled without plugin-specific frontend code.
 - `Confirm` / `ConfirmText` - a confirmation dialog before firing.
 - `OnSuccess` - `{SelectTab, Navigate}` to move the workbench after success
   (`NavigateList` returns to the list).

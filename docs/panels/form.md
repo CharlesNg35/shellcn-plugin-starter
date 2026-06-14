@@ -65,6 +65,16 @@ Use `FormPanelConfig.Params` for resource-scoped forms:
 Params: map[string]string{"name": "${resource.name}"}
 ```
 
+For forms opened from a table row action, field defaults, submit params, and
+`OptionsSource.Params` can also use `${record.*}` from the selected row:
+
+```go
+plugin.Field{Key: "ttl", Label: "TTL", Type: plugin.FieldNumber, Default: "${record.ttl}"}
+```
+
+Use `${resource.*}` for the active `ResourceRef`; use `${record.*}` for the
+current row or object data.
+
 ## When not to use it
 
 - For create/update actions, prefer an `Action` with route `Input`.

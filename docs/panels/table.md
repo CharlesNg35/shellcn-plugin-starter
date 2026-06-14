@@ -56,7 +56,7 @@ slice before slicing.
 
 ## Row identity
 
-When rows open a resource detail or feed row actions, return a `ref` field:
+When rows open a resource detail, return a `ref` field:
 
 ```go
 type itemRow struct {
@@ -69,6 +69,21 @@ type itemRow struct {
 Action params such as `${resource.uid}` resolve from this `ref`, not from an
 arbitrary visible column. Keep `ref.Kind` consistent with the manifest resource
 type.
+
+Do not add a fake `ref` just to make a row action work. Plain rows can feed row
+actions and forms through `${record.*}`:
+
+```go
+plugin.Action{
+    ID: "myplugin.delete", Label: "Delete", RouteID: "myplugin.delete",
+    Params: map[string]string{"key": "${record.key}"},
+    Confirm: true,
+}
+```
+
+Use `${resource.*}` for navigable resource rows; use `${record.*}` for the
+selected row's data fields. Nested paths such as `${record.metadata.name}` are
+valid.
 
 ## Columns
 

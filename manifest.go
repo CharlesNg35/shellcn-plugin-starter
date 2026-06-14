@@ -64,12 +64,13 @@ func (Starter) Manifest() plugin.Manifest {
 		}},
 
 		// Actions bind a button to a route. An action with an Input schema opens
-		// a form; ${resource.uid} pulls the row's id into the route params.
+		// a form. Row actions can use ${record.key} from the selected table row;
+		// use ${resource.uid} only when the row returns a ResourceRef.
 		Actions: []plugin.Action{
 			{ID: "starter.set", Label: "Set entry", Icon: icon("plus"), RouteID: "starter.set"},
 			{
 				ID: "starter.delete", Label: "Delete", Icon: icon("trash-2"), RouteID: "starter.delete",
-				Params:      map[string]string{"key": "${resource.uid}"},
+				Params:      map[string]string{"key": "${record.key}"},
 				Confirm:     true,
 				ConfirmText: "Delete this entry?",
 			},

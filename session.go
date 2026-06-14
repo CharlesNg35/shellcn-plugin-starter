@@ -84,7 +84,7 @@ func set(rc *plugin.RequestContext) (any, error) {
 }
 
 // del removes one entry. The {key} path placeholder from the route arrives via
-// rc.Param, populated from the row action's ${resource.uid}.
+// rc.Param, populated from the row action's ${record.key}.
 func del(rc *plugin.RequestContext) (any, error) {
 	s := rc.Session.(*session)
 	s.mu.Lock()
