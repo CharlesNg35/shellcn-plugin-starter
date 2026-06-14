@@ -91,6 +91,16 @@ Use explicit `Columns` for stable infrastructure objects. Use `ColumnsSource`
 when columns are discovered at runtime, such as database tables or document
 collections.
 
+For dynamic table rows, prefer the SDK alias `plugin.TableRow` over local
+`map[string]any` aliases:
+
+```go
+rows := []plugin.TableRow{
+    {"key": "alpha", "status": "ready"},
+}
+return plugin.Page[plugin.TableRow]{Items: rows}, nil
+```
+
 ```go
 plugin.TableConfig{
     ColumnsSource: &plugin.DataSource{
@@ -212,7 +222,8 @@ are allowed to extract.
 ## Testing checklist
 
 - `rc.Page()` limit, cursor, search, and sort are honored.
-- `ref` exists for rows that navigate or trigger row actions.
+- `ref` exists only for rows that navigate to resource detail.
+- Plain row actions use `${record.*}` params instead of fake refs.
 - Editable mutation handlers revalidate identifiers and writable columns.
 - Destructive row actions use `RiskDestructive`.
 - Dynamic column routes return stable keys and mark read-only columns.

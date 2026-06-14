@@ -316,10 +316,9 @@ expects to inspect and act on that target:
 - Use `PanelTable` for collections and child objects, with typed columns,
   meaningful empty states, default sort, and `Watch` or `RefreshIntervalMs` for
   live objects.
-- For table row actions, return a `ref` object on each row whenever an action
-  needs selected-row identity. `${resource.uid}`, `${resource.name}`,
-  `${resource.namespace}`, and `${resource.scope}` resolve from this reference,
-  not from arbitrary top-level row fields:
+- For table rows that open a resource detail, return a `ref` object on each row.
+  `${resource.uid}`, `${resource.name}`, `${resource.namespace}`, and
+  `${resource.scope}` resolve from this reference:
 
   ```go
   type Row struct {
@@ -339,10 +338,9 @@ expects to inspect and act on that target:
   }
   ```
 
-  Then row actions can use stable params such as
-  `map[string]string{"id": "${resource.uid}"}`. Do not rely on a loose
-  top-level `uid` column for actions; keep visible columns domain-specific and
-  put action identity in `ref`.
+- For plain rows that do not navigate to a resource detail, do not add a fake
+  `ref`. Row actions and row-opened forms can use the selected row data through
+  `${record.*}`, such as `map[string]string{"id": "${record.id}"}`.
 
 - Keep the sidebar tree for navigation, not data. Do not add
   `TreeGroup.Source` or `TreeNode.ChildrenSource` just to expand every pod,
