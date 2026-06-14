@@ -407,7 +407,7 @@ func watch(rc *plugin.RequestContext, client plugin.ClientStream) error {
     for ev := range changes { // your backend's change feed
         e := plugin.ResourceEvent{
             Type:     "modified", // "added" | "modified" | "deleted"
-            Ref:      plugin.ResourceIdentity{Kind: "container", Name: ev.Name, UID: ev.ID},
+            Ref:      plugin.ResourceRef{Kind: "container", Name: ev.Name, UID: ev.ID},
             Resource: ev.Row,
         }
         if err := enc.Encode(e); err != nil {
@@ -419,6 +419,6 @@ func watch(rc *plugin.RequestContext, client plugin.ClientStream) error {
 ```
 
 The gateway patches the grid row keyed by `Ref.UID`. This is how the container
-and Kubernetes plugins show live status. The same `ResourceIdentity`/event shape backs
+and Kubernetes plugins show live status. The same `ResourceRef`/event shape backs
 lazy tree expansion: a `TreeGroup.Source` (or a `TreeNode.ChildrenSource`) route
 returns `plugin.TreeNode` values, and the renderer expands them on click.

@@ -72,7 +72,7 @@ For forms opened from a table row action, field defaults, submit params, and
 plugin.Field{Key: "ttl", Label: "TTL", Type: plugin.FieldNumber, Default: "${record.ttl}"}
 ```
 
-Use `${resource.*}` for the active `ResourceIdentity`; use `${record.*}` for the
+Use `${resource.*}` for the active `ResourceRef`; use `${record.*}` for the
 current row or object data.
 
 ## When not to use it
