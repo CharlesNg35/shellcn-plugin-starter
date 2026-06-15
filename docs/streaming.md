@@ -81,8 +81,8 @@ handler writes before the stream closes - no extra wire surface.
 ## `plugin.ClientStream`
 
 The browser side is an `io.ReadWriteCloser` plus `Context()` that's cancelled on
-disconnect. For a server-stream (logs, query results) you often just _write_ to
-it - encode JSON events straight onto `client`:
+disconnect. For a server-stream (logs, metrics, task progress) you often just
+_write_ to it - encode JSON events straight onto `client`:
 
 ```go
 enc := json.NewEncoder(client)
@@ -110,8 +110,8 @@ func (s *session) OpenChannel(ctx context.Context, req plugin.ChannelRequest) (p
 }
 ```
 
-Channel kinds: `StreamTerminal`, `StreamLogs`, `StreamDesktop`, `StreamMetrics`,
-`StreamFile`.
+Channel kinds: `StreamTerminal`, `StreamLogs`, `StreamQuery`, `StreamDesktop`,
+`StreamMetrics`, `StreamFile`.
 
 ### Resizable terminals and desktop init (optional channel methods)
 
@@ -178,9 +178,14 @@ recording, and transport policy:
   that active reader.
 - `StreamLogs`, `StreamMetrics`, `StreamFile`, and `StreamTask` are
   server-to-browser streams. Their handlers often only write events to the
-  browser. Do not declare a log, watch, metrics feed, task, or long-running query
-  as `StreamTerminal` just because it uses a WebSocket; a keepalive ping could
-  time out if no handler is reading from the browser.
+  browser. Do not declare a log, watch, metrics feed, task, or long-running
+  operation as `StreamTerminal` just because it uses a WebSocket; a keepalive
+  ping could time out if no handler is reading from the browser.
+- `StreamQuery` is for query/editor consoles such as SQL, PromQL, LogQL,
+  SurrealQL, search DSLs, and database admin commands. The handler must read
+  browser request frames and write result frames on the same socket. Do not use
+  `StreamLogs` for a query editor, even if every execution returns a finite list
+  of rows.
 
 If you add a custom bidirectional stream shape, keep the same invariant in mind:
 only streams with a continuous client-read loop should use terminal/desktop-style

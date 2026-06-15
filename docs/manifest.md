@@ -325,6 +325,11 @@ SDK types are still the source of truth for field names, but the panel docs
 explain which route method to use, what the route should return, and common
 mistakes.
 
+For WebSocket-backed panels, the stream kind is part of the contract. A terminal
+panel uses `StreamTerminal`, a log panel uses `StreamLogs`, and
+`PanelQueryEditor` uses `StreamQuery` because its handler reads browser request
+frames and writes result frames on the same socket.
+
 Use `Panel.Variants` when one logical tab should switch renderer/config from
 connection or row state. Do not duplicate tabs just to choose between generic
 renderers. The first variant whose `VisibleWhen` matches wins; otherwise the

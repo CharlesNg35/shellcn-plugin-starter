@@ -356,6 +356,9 @@ carry the selected database/schema/table down to every route.
 Pair a `PanelQueryEditor` with a `QueryEditorConfig` for a SQL/console panel:
 
 ```go
+Streams: []plugin.Stream{
+    {ID: "myplugin.query", Kind: plugin.StreamQuery, RouteID: "myplugin.query"},
+},
 plugin.QueryEditorConfig{
     Language:          "sql",
     ExecuteLabel:      "Run query",
@@ -367,10 +370,12 @@ plugin.QueryEditorConfig{
 }
 ```
 
-Run the query over a **WS route** (results stream back as they arrive) and have
-the handler report each statement through `rc.Audit(...)` so long-running console
-work is recorded. Honor `rc.Ctx` cancellation so the Cancel button actually stops
-the statement.
+Run the query over a **WS route** declared as `StreamQuery` (results stream back
+as they arrive) and have the handler report each statement through
+`rc.Audit(...)` so long-running console work is recorded. Honor `rc.Ctx`
+cancellation so the Cancel button actually stops the statement. Do not use
+`StreamLogs` for query editors; log streams are one-way tails, while query
+editors read browser request frames and write result frames on the same socket.
 
 The query editor sends each run as a JSON frame:
 

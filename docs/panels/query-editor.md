@@ -5,6 +5,9 @@ and receives result frames: SQL, PromQL, LogQL, SurrealQL, search DSLs, database
 commands, or similar protocols.
 
 ```go
+Streams: []plugin.Stream{
+    {ID: "myplugin.query", Kind: plugin.StreamQuery, RouteID: "myplugin.query"},
+},
 plugin.Panel{
     Key:   "query",
     Label: "SQL",
@@ -28,8 +31,14 @@ plugin.Panel{
 
 ## Stream route
 
-The source route is `MethodWS`. The panel sends execution requests to the stream
-as JSON:
+The source route is `MethodWS` and the manifest stream kind must be
+`plugin.StreamQuery`. Query editor streams are bidirectional: the panel sends
+execution requests to the stream as JSON, and the handler writes result frames
+back on the same socket.
+
+Do not declare a query editor stream as `plugin.StreamLogs`. Log streams are for
+server-to-browser tails and the gateway may attach transport behavior that
+conflicts with a query handler reading browser request frames.
 
 ```json
 { "query": "SELECT 1;", "confirm": false }

@@ -542,9 +542,13 @@ Declare stream kinds by browser behavior:
 - `StreamTerminal` and `StreamDesktop` mean interactive streams with a continuous
   browser-to-upstream read loop. The gateway may apply WebSocket keepalive policy
   to these because pong frames are processed by that reader.
-- `StreamLogs`, `StreamMetrics`, and `StreamFile` are server-to-browser streams.
-  Do not label logs, watches, metrics, or long-running query results as terminal
-  streams just because they use WebSockets; that can cause false idle timeouts.
+- `StreamLogs`, `StreamMetrics`, `StreamFile`, and `StreamTask` are
+  server-to-browser streams. Do not label logs, watches, metrics, or
+  long-running operations as terminal streams just because they use WebSockets;
+  that can cause false idle timeouts.
+- `StreamQuery` is for query editors. Its handler reads browser request frames
+  and writes result frames on the same socket, so it must not be modeled as
+  `StreamLogs`.
 
 If a future stream shape is bidirectional, only treat it like terminal/desktop
 when the handler continuously reads from the browser for the life of the stream.
@@ -627,7 +631,8 @@ sess, params, query, body)` and assert the returned value. Run `go test -race`.
 
 Test the ShellCN panel payload, not only the upstream API payload. For example:
 
-- `PanelQueryEditor` sends `{ "query": "...", "confirm": false }`.
+- `PanelQueryEditor` must use a `StreamQuery` source and sends
+  `{ "query": "...", "confirm": false }`.
 - `PanelCodeEditor` sends `{ "content": "..." }` unless `SaveBodyKey` is set.
 - `PanelDiff` reads an object with the configured original/modified fields.
 
