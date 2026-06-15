@@ -111,7 +111,7 @@ func (s *session) OpenChannel(ctx context.Context, req plugin.ChannelRequest) (p
 ```
 
 Channel kinds: `StreamTerminal`, `StreamLogs`, `StreamQuery`, `StreamDesktop`,
-`StreamMetrics`, `StreamFile`.
+`StreamMetrics`, `StreamTask`, and `StreamCanvas`.
 
 ### Resizable terminals and desktop init (optional channel methods)
 
@@ -176,7 +176,7 @@ recording, and transport policy:
   resize, mouse, pointer, wheel, or keyboard frames. The gateway may send
   WebSocket ping keepalives on these streams because pong frames are processed by
   that active reader.
-- `StreamLogs`, `StreamMetrics`, `StreamFile`, and `StreamTask` are
+- `StreamLogs`, `StreamMetrics`, and `StreamTask` are
   server-to-browser streams. Their handlers often only write events to the
   browser. Do not declare a log, watch, metrics feed, task, or long-running
   operation as `StreamTerminal` just because it uses a WebSocket; a keepalive

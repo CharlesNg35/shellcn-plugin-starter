@@ -14,29 +14,34 @@ plugin.Panel{
     Type:   plugin.PanelFileBrowser,
     Source: &plugin.DataSource{RouteID: "myplugin.files.list", Params: map[string]string{"path": "."}},
     Config: plugin.FileBrowserConfig{
-        PathParam:       "path",                // the route param carrying the current dir
-        ReadRouteID:     "myplugin.files.read",   // preview a file's contents
-        DownloadRouteID: "myplugin.files.download",
-        WriteRouteID:    "myplugin.files.write",  // save an edited text file
-        UploadRouteID:   "myplugin.files.upload",
-        MkdirRouteID:    "myplugin.files.mkdir",
-        RenameRouteID:   "myplugin.files.rename",
-        DeleteRouteID:   "myplugin.files.delete",
-        // Optional bulk ops over a multi-selection:
-        MoveRouteID:     "myplugin.files.move",
-        CopyRouteID:     "myplugin.files.copy",
-        ChmodRouteID:    "myplugin.files.chmod",
-        ArchiveRouteID:  "myplugin.files.archive",
-        Writable:        true,
-        MultipleUpload:  true,
-        MaxUploadBytes:  50 << 20,
-        UploadFieldName: "files",               // multipart field name (matches the upload schema)
+        PathParam: "path", // route param carrying the current dir/file path
+        Routes: plugin.FileBrowserRoutes{
+            Read:     "myplugin.files.read",
+            Download: "myplugin.files.download",
+            Write:    "myplugin.files.write",
+            Mkdir:    "myplugin.files.mkdir",
+            Rename:   "myplugin.files.rename",
+            Delete:   "myplugin.files.delete",
+            Move:     "myplugin.files.move",
+            Copy:     "myplugin.files.copy",
+            Chmod:    "myplugin.files.chmod",
+            Archive:  "myplugin.files.archive",
+        },
+        Upload: plugin.FileUploadConfig{
+            RouteID:   "myplugin.files.upload",
+            FieldName: "files", // multipart field name (matches the upload schema)
+            Multiple:  true,
+        },
+        Writable: true,
     },
 }
 ```
 
-Leave a `*RouteID` empty and the UI hides that action - a read-only browser is
-just `ReadRouteID`/`DownloadRouteID` with `Writable: false`.
+Leave a route ID empty and the UI hides that action. A read-only browser is just
+`Routes.Read`/`Routes.Download` with `Writable: false`.
+
+File browser operations are request/response routes. Keep progress/cancel needs
+in a separate task surface instead of adding file-browser-specific streams.
 
 ## Listing a directory
 
@@ -79,7 +84,7 @@ return &plugin.Download{
 
 ## Uploads
 
-Declare a `FieldFile` input matching `UploadFieldName`, then read the parts:
+Declare a `FieldFile` input matching `Upload.FieldName`, then read the parts:
 
 ```go
 Input: &plugin.Schema{Groups: []plugin.Group{{Fields: []plugin.Field{
@@ -90,12 +95,23 @@ func upload(rc *plugin.RequestContext) (any, error) {
     for _, up := range rc.Uploads("files") {
         f, err := up.Open()
         if err != nil { return nil, err }
-        // ...stream f to dst, respecting MaxUploadBytes...
+        // ...stream f to dst, respecting Upload.MaxBytes...
         _ = f.Close()
     }
     return map[string]any{"ok": true}, nil
 }
 ```
+
+## Simple move/copy routes
+
+Simple destination operations receive selected paths and a destination folder:
+
+```json
+{ "paths": ["/a.txt", "/logs"], "destination": "/archive" }
+```
+
+The file browser still shows a folder picker for the destination. Typing a path
+is available as a fallback, not the primary flow.
 
 ## Security: never trust the path
 

@@ -542,7 +542,7 @@ Declare stream kinds by browser behavior:
 - `StreamTerminal` and `StreamDesktop` mean interactive streams with a continuous
   browser-to-upstream read loop. The gateway may apply WebSocket keepalive policy
   to these because pong frames are processed by that reader.
-- `StreamLogs`, `StreamMetrics`, `StreamFile`, and `StreamTask` are
+- `StreamLogs`, `StreamMetrics`, and `StreamTask` are
   server-to-browser streams. Do not label logs, watches, metrics, or
   long-running operations as terminal streams just because they use WebSockets;
   that can cause false idle timeouts.
