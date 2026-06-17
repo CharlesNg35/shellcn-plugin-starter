@@ -563,6 +563,9 @@ injected into every read/stream route's params. Each `ScopeFilter` has a
 `OptionsSource`.
 Use `Multiple: true` with `ScopeSelect` or `ScopeAutoComplete` for multi-value
 scopes; selected values are joined with `plugin.ScopeSeparator`.
+Select and multi-select scopes show a filter input by default. Set
+`DisableSearch: true` for compact option sets where the extra search field hurts
+scanability more than it helps.
 Autocomplete scopes are selection-only by default: typed text filters choices
 but is not submitted as a value unless `AllowCustom: true` is set.
 Route-sourced choices may also declare a `WatchSource` WebSocket `DataSource`

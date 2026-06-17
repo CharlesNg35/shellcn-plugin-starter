@@ -127,6 +127,8 @@ func databaseScope() plugin.ScopeFilter {
         Param:         "database",
         Label:         "Database",
         Icon:          icon("database"),
+        Control:       plugin.ScopeSelect,
+        DisableSearch: true, // compact list; no filter input needed
         OptionsSource: &plugin.DataSource{RouteID: "myplugin.databases.list"},
         ValueField:    "value", // which field of each option row is the value
         LabelField:    "label",
@@ -153,6 +155,9 @@ family (`ScopeSelect` default, `ScopeAutoComplete`, `ScopeSearch`,
 `ScopeToggle`); set `Multiple: true` on select/autocomplete scopes for
 multi-value selection. Autocomplete is selection-only unless the plugin
 explicitly sets `AllowCustom: true`.
+Select and multi-select scopes are searchable by default. Set
+`DisableSearch: true` for small, fixed, easy-to-scan lists where a filter input
+adds noise, such as Redis database numbers.
 Use `WatchSource` for choices that can change while the workspace is open
 (namespaces, databases, regions, projects). It must be a WebSocket route that
 emits `ResourceEvent` frames using the normal `added`, `updated`, and `deleted`
