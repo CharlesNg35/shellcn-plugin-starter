@@ -119,7 +119,13 @@ Column fields:
   `ColumnBool`, `ColumnJSON`, or `ColumnIcon`.
 - `Sortable`: tells the renderer it can request sort by that field.
 - `Width`: optional CSS width hint.
-- `ReadOnly`: keeps server-managed values out of inline editors.
+- `Editable`: opts this column into add-row/update editing. Table-level
+  `Editable` does not make every column writable.
+- `Editor`: required when `Editable` is true. Use `ColumnEditorText`,
+  `ColumnEditorTextarea`, `ColumnEditorNumber`, `ColumnEditorToggle`,
+  `ColumnEditorSelect`, or `ColumnEditorJSON`.
+- `Options`: required for `ColumnEditorSelect`.
+- `ReadOnly`: marks display-only server-managed values.
 - `Nullable`: lets editable cells clear to null.
 - `Precision`: fixes fraction digits for number/percent cells.
 - `Severities`: maps lower-cased badge values to semantic colors.
@@ -167,6 +173,12 @@ plugin.TableConfig{
     Editable:    true,
     StagedEdits: true,
     RowKey:      []string{"id"},
+    Columns: []plugin.Column{
+        {Key: "id", Label: "ID", ReadOnly: true},
+        {Key: "name", Label: "Name", Editable: true, Editor: plugin.ColumnEditorText},
+        {Key: "enabled", Label: "Enabled", Type: plugin.ColumnBool, Editable: true, Editor: plugin.ColumnEditorToggle},
+        {Key: "metadata", Label: "Metadata", Type: plugin.ColumnJSON, Editable: true, Editor: plugin.ColumnEditorJSON, Nullable: true},
+    },
     ColumnsSource: &plugin.DataSource{
         RouteID: "myplugin.columns",
         Params:  map[string]string{"table": "${resource.uid}"},
@@ -189,9 +201,20 @@ plugin.TableConfig{
 }
 ```
 
+`Editable` enables mutation affordances when `Insert`, `Update`, or `Delete`
+exist; it is not a blanket "make every cell a text input" switch. Each writable
+column must declare `Editable: true` and a concrete `Editor`. Keep primary keys,
+generated columns, computed values, and audit fields read-only.
+
 Mutation routes receive edited row data as JSON. Validate table names, primary
 keys, column names, and writable columns again in the handler. Do not trust the
 column metadata returned by `ColumnsSource` as authorization.
+
+For runtime columns, `ColumnsSource` should return rows with stable `name` or
+`key`, `label`, display `type`, plus `editable`, `editor`, `readOnly`, and
+`nullable` when the table is writable. JSON/object columns should use
+`ColumnEditorJSON`; the renderer shows a compact cell summary and opens a JSON
+editor dialog instead of inline-editing `[object Object]`.
 
 `StagedEdits` lets users batch local edits before sending them. Use it for
 database tables where accidental single-cell commits are risky.
@@ -226,5 +249,5 @@ are allowed to extract.
 - Plain row actions use `${record.*}` params instead of fake refs.
 - Editable mutation handlers revalidate identifiers and writable columns.
 - Destructive row actions use `RiskDestructive`.
-- Dynamic column routes return stable keys and mark read-only columns.
+- Dynamic column routes return stable keys, editor metadata, and read-only flags.
 - Export is enabled only when the plugin intentionally permits it.

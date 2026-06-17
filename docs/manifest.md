@@ -489,7 +489,7 @@ plugin.TableConfig{
     RowActionIDs: []string{"myplugin.delete"}, // per-row buttons (implies row selection)
     DefaultSort:  &plugin.SortKey{Field: "key"},
     Exportable:   true,                       // allow CSV/JSON export of loaded rows
-    // Editable grids: set RowKey + Insert/Update/Delete DataSources.
+    // Editable grids: set mutation DataSources and opt in per column.
 }
 ```
 
@@ -501,9 +501,13 @@ plugin.TableConfig{
 `Key`s must match the JSON field names your list route returns.
 
 For an **editable grid**, set `Editable: true`, name the primary-key column(s) in
-`RowKey`, and point `Insert`/`Update`/`Delete` at mutation routes; the gateway
-sends each edited row as JSON to those routes. Mutation handlers must revalidate
-table names, primary keys, writable columns, and backend permissions server-side.
+`RowKey`, point `Insert`/`Update`/`Delete` at mutation routes, and mark each
+writable column with `Editable: true` plus a concrete `Column.Editor`
+(`ColumnEditorText`, `ColumnEditorTextarea`, `ColumnEditorNumber`,
+`ColumnEditorToggle`, `ColumnEditorSelect`, or `ColumnEditorJSON`). Table-level
+`Editable` only enables mutation mode; it does not make every column writable.
+Mutation handlers must revalidate table names, primary keys, writable columns,
+and backend permissions server-side.
 
 ## Actions
 

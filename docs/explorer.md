@@ -324,8 +324,9 @@ known yet, it targets the first pane.
 
 ## Editable grids (the database "data" tab)
 
-For a spreadsheet-style editable table, set `Editable` plus the mutation routes.
-The grid sends each changed row as JSON to `Insert`/`Update`/`Delete`.
+For a spreadsheet-style editable table, set `Editable` plus the mutation routes,
+then explicitly opt writable columns into editing. The grid sends each changed
+row as JSON to `Insert`/`Update`/`Delete`.
 
 ```go
 plugin.TableConfig{
@@ -343,10 +344,25 @@ Two things make editing work:
 
 - **`ColumnsSource`** - for tables whose columns are only known at runtime (a
   real DB table), return the column list from a route instead of hard-coding it.
+  Include stable `name`/`label`, display `type`, and for writable data also
+  `editable`, `editor`, `readOnly`, and `nullable`. Use editors such as `text`,
+  `number`, `toggle`, `select`, and `json`; JSON/object columns should use the
+  JSON editor so users get a formatted dialog instead of inline `[object Object]`
+  text.
 - **Row keys** - each row your list route returns must carry its primary-key
   values so the grid can address it on update/delete. Your update/delete handlers
   then validate that key before mutating. Never trust a client-supplied row
   identity blindly - re-check it against the real key.
+
+For static columns, declare the same contract directly:
+
+```go
+Columns: []plugin.Column{
+    {Key: "id", Label: "ID", ReadOnly: true},
+    {Key: "name", Label: "Name", Editable: true, Editor: plugin.ColumnEditorText},
+    {Key: "metadata", Label: "Metadata", Type: plugin.ColumnJSON, Editable: true, Editor: plugin.ColumnEditorJSON},
+}
+```
 
 `${resource.scope}` / `${resource.namespace}` / `${resource.name}` in the params
 carry the selected database/schema/table down to every route.
