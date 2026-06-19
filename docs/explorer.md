@@ -327,6 +327,24 @@ The action route returns the command field, for example
 `PanelTerminalGrid`, ShellCN sends input to the active pane; if no active pane is
 known yet, it targets the first pane.
 
+An `open_panel` effect opens a panel after the action succeeds. The panel's
+`Source` params may interpolate the action's JSON result via `${response.x}`, so a
+route can create a resource and then open a panel into it:
+
+```go
+OnSuccess: &plugin.ActionSuccess{
+    Effects: []plugin.ActionEffect{{
+        Type: plugin.ActionEffectOpenPanel,
+        OpenPanel: &plugin.OpenPanelEffect{
+            Open:   plugin.OpenDialog,
+            Panel:  plugin.PanelObjectDetail,
+            Title:  "New backup",
+            Source: &plugin.DataSource{RouteID: "myplugin.backup.read", Params: map[string]string{"id": "${response.id}"}},
+        },
+    }},
+}
+```
+
 ## Editable grids (the database "data" tab)
 
 For a spreadsheet-style editable table, set `Editable` plus the mutation routes,

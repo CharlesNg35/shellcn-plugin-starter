@@ -23,5 +23,14 @@ plugin.Panel{
 ```
 
 The source route returns `plugin.Page[T]`. Each item should contain the fields
-named in config. Use `RefreshIntervalMs` for polling. Use a watch stream only
-when event volume and backend support justify it.
+named in config. Use `RefreshIntervalMs` for polling, or set `Watch` to a
+`StreamResource` WS route that pushes new event records — preferred over polling
+when the backend has a real event feed. The renderer prepends pushed events keyed
+by their `ref` identity.
+
+```go
+Config: plugin.TimelineConfig{
+    TimestampField: "time", TitleField: "reason", BodyField: "message",
+    Watch: &plugin.DataSource{RouteID: "myplugin.events.watch", Params: map[string]string{"id": "${resource.uid}"}},
+}
+```

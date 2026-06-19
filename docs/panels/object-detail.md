@@ -77,3 +77,21 @@ plain fields for identity, placement, version, status, and configuration.
 
 `RawToggle` is useful for diagnostics, but it should not be the only useful view.
 Show the fields operators need first, then allow raw JSON as a fallback.
+
+## Live updates (`Watch`)
+
+Set `Config.Watch` to a `StreamResource` WS route to live-update the panel as the
+object changes server-side, instead of relying on manual refresh. The stream emits
+object snapshots in the same shape the `Source` route returns; the renderer
+replaces the displayed fields on each push.
+
+```go
+Config: plugin.ObjectDetailConfig{
+    Sections: sections,
+    Watch:    &plugin.DataSource{RouteID: "myplugin.item.watch", Params: map[string]string{"id": "${resource.uid}"}},
+}
+```
+
+Declare the watch route in `streams()` with `Kind: plugin.StreamResource`. Only add
+it when the backend has a real change feed (or a cheap poll); leave it unset for
+static, fetch-once objects.

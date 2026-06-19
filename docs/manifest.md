@@ -123,7 +123,20 @@ Field types: `FieldText`, `FieldTextarea`, `FieldPassword`, `FieldEmail`,
 A `Condition` is `AllOf`/`AnyOf` lists of `Rule{Field, Op, Value}` evaluated
 against the other field values. A field with a `VisibleWhen` is shown (and
 required/validated) only when its condition holds. Operators: `OpEq`, `OpNeq`,
-`OpIn`, `OpNin`, `OpEmpty`, `OpNotEmpty`.
+`OpIn`, `OpNin`, `OpEmpty`, `OpNotEmpty`, `OpGt`, `OpLt`, `OpGte`, `OpLte`, and
+`OpContains` (numeric compares coerce strings; `OpContains` matches a substring or
+a slice member). `Rule.Field` may be a dotted path (`"tls.mode"`) to read a nested
+value.
+
+`AllOf`/`AnyOf` hold leaf rules; for arbitrary boolean logic, nest sub-conditions
+with `All`, `Any`, and `Not`, e.g. "(A and B) or (C and not D)":
+
+```go
+plugin.Condition{Any: []plugin.Condition{
+    {AllOf: []plugin.Rule{{Field: "a", Op: plugin.OpEq, Value: true}, {Field: "b", Op: plugin.OpNotEmpty}}},
+    {AllOf: []plugin.Rule{{Field: "c", Op: plugin.OpEq, Value: "x"}}, Not: &plugin.Condition{AllOf: []plugin.Rule{{Field: "d", Op: plugin.OpEq, Value: true}}}},
+}}
+```
 
 Besides field keys, two context keys are available so a field can depend on the
 chosen **transport** or the protocol: `SchemaContextTransport` (`$transport`) and
@@ -533,8 +546,9 @@ Useful `Action` fields:
   row/detail actions. The renderer resolves them before opening the form, so
   dialogs can be prefilled without plugin-specific frontend code.
 - `Confirm` / `ConfirmText` - a confirmation dialog before firing.
-- `OnSuccess` - `{SelectTab, Navigate}` to move the workbench after success
-  (`NavigateList` returns to the list).
+- `OnSuccess` - `{SelectTab, Navigate, Effects}` to move the workbench or run
+  typed UI effects after success (`NavigateList` returns to the list; `Effects`
+  cover `terminal_input` and `open_panel` — see [explorer.md](explorer.md)).
 - `Open` + `Panel` + `Config` - open a panel in the dock (`OpenDock`), a modal
   (`OpenDialog`), the main view (`OpenView`), or a new browser tab (`OpenURL`,
   using the route-returned URL).

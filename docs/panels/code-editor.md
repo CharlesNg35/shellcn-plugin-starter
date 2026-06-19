@@ -54,6 +54,52 @@ the parsed value under that key. Use it for JSON structured update routes. Leave
 `SaveExtra` adds fixed fields to the save body. Validate the body again in the
 handler with `rc.Bind`.
 
+## Canonical refresh after save (`RefreshField`)
+
+After a save the editor's baseline (the buffer it diffs unsaved edits against) is
+stale: the server may have normalized, defaulted, or reformatted the document.
+Set `RefreshField` to a key in the **save response** whose value is the canonical
+content as a string; the editor resets both its buffer and baseline to it.
+
+```go
+Config: plugin.CodeEditorConfig{
+    Language:     "json",
+    SaveRouteID:  "myplugin.document.update",
+    SaveMethod:   plugin.MethodPut,
+    RefreshField: "content",
+}
+```
+
+The save handler re-reads the stored object and returns the content already
+serialized the same way the read route renders it (the editor shows objects as
+2-space-indented JSON, so marshal with `json.MarshalIndent(doc, "", "  ")`):
+
+```go
+func documentUpdate(rc *plugin.RequestContext) (any, error) {
+    // ...write, then read back the canonical object...
+    out, err := json.MarshalIndent(doc, "", "  ")
+    if err != nil {
+        return nil, err
+    }
+    return map[string]any{"content": string(out)}, nil
+}
+```
+
+The value must be a **string**; a non-string (or absent) `RefreshField` leaves the
+baseline at the editor's current text. Use this only when the write is
+synchronous and the re-read is canonical — skip it for async/eventually-applied
+writes (e.g. task-queued updates) where a re-read would be stale.
+
+## Live editing (`Watch`) and Preview (`DryRunKey`)
+
+`Watch` points at a `StreamResource` WS route that pushes the current content; the
+editor live-updates while clean and shows a non-destructive "changed on server"
+notice when there are unsaved edits. With `RefreshField` set, `DryRunKey` enables
+a Preview: the save body is re-sent with that key set to `true`, and the returned
+`RefreshField` content is diffed against the live baseline so the user previews the
+server's would-be result before committing. Only set `DryRunKey` when the save
+route honors a dry-run flag (validate, don't persist).
+
 ## Action dialogs
 
 For create/update dialogs, define an action with `Open: plugin.OpenDialog`,

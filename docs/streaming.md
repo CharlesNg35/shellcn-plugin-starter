@@ -111,7 +111,7 @@ func (s *session) OpenChannel(ctx context.Context, req plugin.ChannelRequest) (p
 ```
 
 Channel kinds: `StreamTerminal`, `StreamLogs`, `StreamQuery`, `StreamDesktop`,
-`StreamMetrics`, `StreamTask`, and `StreamCanvas`.
+`StreamMetrics`, `StreamTask`, `StreamCanvas`, and `StreamResource`.
 
 ### Resizable terminals and desktop init (optional channel methods)
 
@@ -186,6 +186,13 @@ recording, and transport policy:
   browser request frames and write result frames on the same socket. Do not use
   `StreamLogs` for a query editor, even if every execution returns a finite list
   of rows.
+- `StreamResource` is the server-push watch of resource state: list deltas that
+  patch a table/tree row, or object snapshots that live-update a detail/editor
+  panel. It is a server-to-browser stream (same keepalive treatment as
+  `StreamLogs`): the handler writes `plugin.ResourceEvent` values and discards
+  browser noise. It backs `TableConfig.Watch`/`ResourceType.Watch` (lists) and
+  `ObjectDetailConfig.Watch`/`CodeEditorConfig.Watch`/`TimelineConfig.Watch`
+  (single objects and event feeds).
 
 If you add a custom bidirectional stream shape, keep the same invariant in mind:
 only streams with a continuous client-read loop should use terminal/desktop-style
@@ -427,3 +434,9 @@ The gateway patches the grid row keyed by `Ref.UID`. This is how the container
 and Kubernetes plugins show live status. The same `ResourceIdentity`/event shape backs
 lazy tree expansion: a `TreeGroup.Source` (or a `TreeNode.ChildrenSource`) route
 returns `plugin.TreeNode` values, and the renderer expands them on click.
+
+The same `StreamResource` kind also backs **single-object** live updates. Point
+`ObjectDetailConfig.Watch`, `CodeEditorConfig.Watch`, or `TimelineConfig.Watch` at
+a WS route that emits object snapshots (a detail/editor renders the latest
+snapshot; a timeline prepends each event). Declare every such route in `streams()`
+with `Kind: plugin.StreamResource` so it gets the server-push keepalive policy.
