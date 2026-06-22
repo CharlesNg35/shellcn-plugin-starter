@@ -100,6 +100,31 @@ a Preview: the save body is re-sent with that key set to `true`, and the returne
 server's would-be result before committing. Only set `DryRunKey` when the save
 route honors a dry-run flag (validate, don't persist).
 
+## Save feedback (`SaveToast`, `SaveDismiss`)
+
+By default a successful save shows an inline confirmation in the panel. For a
+dialog-opened editor (create/apply), set `SaveDismiss: plugin.SaveDismissClose` to
+close the host dialog on success, and `SaveToast` to confirm with a toast instead
+(the panel is gone, so the toast carries the feedback):
+
+```go
+Config: plugin.CodeEditorConfig{
+    Language:    "yaml",
+    SaveRouteID: "myplugin.apply",
+    SaveMethod:  plugin.MethodPost,
+    SaveDismiss: plugin.SaveDismissClose,
+    SaveToast: &plugin.SaveToast{
+        Summary:  "Applied",
+        Detail:   "${response.name} updated",
+        Severity: plugin.SeveritySuccess,
+    },
+}
+```
+
+`SaveToast.Detail` may interpolate the save response via `${response.x}`.
+`SaveDismissNone` (the default) keeps the panel open with the inline confirmation.
+Both fields are generic — `PanelForm` accepts the same two via `FormPanelConfig`.
+
 ## Action dialogs
 
 For create/update dialogs, define an action with `Open: plugin.OpenDialog`,

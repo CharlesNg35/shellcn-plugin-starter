@@ -62,3 +62,23 @@ include the current workspace theme:
 to channels implementing `plugin.Resizer`. If your terminal application needs
 theme information, parse the control frames before forwarding input or wrap the
 channel path intentionally. Most remote shells do not need this.
+
+## Controls
+
+`TerminalConfig.Controls` is the same `[]plugin.StreamControl` used by the
+[log viewer](log-stream.md). A control re-parameterizes the session and
+reconnects — e.g. a picker that switches which container a pod shell execs into:
+
+```go
+Config: plugin.TerminalConfig{
+    Zoom: true, Search: true,
+    Controls: []plugin.StreamControl{{
+        Param: "container", Label: "Container",
+        OptionsSource: &plugin.DataSource{RouteID: "myplugin.pod.containers"},
+    }},
+}
+```
+
+Changing a control resets the buffer and reconnects with the new param (the
+handler reads it via `rc.Param("container")`). The picker lives in the terminal's
+collapsible control overlay and is hidden entirely when there is only one option.

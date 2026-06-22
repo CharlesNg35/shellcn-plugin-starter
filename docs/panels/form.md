@@ -75,6 +75,23 @@ plugin.Field{Key: "ttl", Label: "TTL", Type: plugin.FieldNumber, Default: "${rec
 Use `${resource.*}` for the active `ResourceIdentity`; use `${record.*}` for the
 current row or object data.
 
+## Save feedback
+
+`FormPanelConfig.SaveToast` and `SaveDismiss` behave exactly as in
+[code-editor](code-editor.md): set `SaveDismiss: plugin.SaveDismissClose` to close
+a dialog-opened form on success, and `SaveToast` (a `*plugin.SaveToast` with
+`Summary`/`Detail`/`Severity`, where `Detail` may use `${response.x}`) to confirm
+via a toast once the panel is gone.
+
+```go
+Config: plugin.FormPanelConfig{
+    SubmitRouteID: "myplugin.settings.save",
+    SubmitMethod:  plugin.MethodPut,
+    SaveDismiss:   plugin.SaveDismissClose,
+    SaveToast:     &plugin.SaveToast{Summary: "Saved", Severity: plugin.SeveritySuccess},
+}
+```
+
 ## When not to use it
 
 - For create/update actions, prefer an `Action` with route `Input`.

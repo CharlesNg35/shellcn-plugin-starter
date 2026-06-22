@@ -74,3 +74,25 @@ Operation route calls use these methods and bodies:
 Each operation also receives the selected path through `PathParam`.
 
 Always normalize and confine paths. Never trust browser-supplied paths.
+
+## Controls
+
+`FileBrowserConfig.Controls` is the same `[]plugin.StreamControl` used by the
+[log](log-stream.md) and [terminal](terminal.md) panels. Here the selected value
+is merged into **every** file operation's route params (and the listing reloads) —
+e.g. a picker that browses a different container's filesystem on a multi-container
+pod:
+
+```go
+Config: plugin.FileBrowserConfig{
+    PathParam: "path",
+    Routes:    plugin.FileBrowserRoutes{ /* ... */ },
+    Controls: []plugin.StreamControl{{
+        Param: "container", Label: "Container",
+        OptionsSource: &plugin.DataSource{RouteID: "myplugin.pod.containers"},
+    }},
+}
+```
+
+The selected value reaches each operation handler via `rc.Param("container")`,
+alongside the path. The picker is hidden when there is only one option.
