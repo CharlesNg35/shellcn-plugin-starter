@@ -598,13 +598,23 @@ of them your connection form offers:
 | `TransportDirect` | The gateway reaches the target itself (you give it host/port).                                      |
 | `TransportAgent`  | The gateway tunnels through an agent running next to the target. Requires an `Agent *AgentProfile`. |
 
-Declare one or both. Your handler and session code are **identical** either way -
-you always dial through `cfg.Net` (see [sessions.md](sessions.md)); the gateway
-wires it to a direct dial or the agent tunnel for you.
+Declare one or both. When a plugin supports both, your handler and session code
+are usually identical - you always dial through `cfg.Net` (see
+[sessions.md](sessions.md)); the gateway wires it to a direct dial or the agent
+tunnel for you.
 
 ```go
 // Direct-only (most plugins):
 SupportedTransports: []plugin.Transport{plugin.TransportDirect},
+
+// Agent-only (privileged host-local daemons, sockets, or host monitors):
+SupportedTransports: []plugin.Transport{plugin.TransportAgent},
+Agent: &plugin.AgentProfile{
+    Proxy: plugin.ProxyTarget{Mode: plugin.AgentUnix, Address: "/var/run/docker.sock", Risk: plugin.RiskPrivileged},
+    Install: []plugin.InstallArtifact{
+        {Label: "Docker", Kind: "docker-run", Template: "docker run ... {{.ConnectURL}} {{.Token}}"},
+    },
+},
 
 // Both - the form lets the user choose; add an AgentProfile for the agent path:
 SupportedTransports: []plugin.Transport{plugin.TransportDirect, plugin.TransportAgent},
@@ -615,6 +625,10 @@ Agent: &plugin.AgentProfile{
     },
 },
 ```
+
+Use agent-only for integrations that would otherwise expose the gateway host's
+own local Docker/Podman/Swarm socket, host monitor, or another privileged local
+daemon to users who can create connections on a shared gateway.
 
 When you offer both, hide the direct-only config fields (host, port, socket) under
 the agent transport with a `$transport` condition - see

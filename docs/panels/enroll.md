@@ -22,6 +22,21 @@ Agent: &plugin.AgentProfile{
 }
 ```
 
+For host-sensitive plugins such as Docker, Podman, Swarm, host monitoring, or
+other local daemon/socket integrations, prefer agent-only:
+
+```go
+SupportedTransports: []plugin.Transport{plugin.TransportAgent},
+Agent: &plugin.AgentProfile{
+    Proxy: plugin.ProxyTarget{
+        Mode:    plugin.AgentUnix,
+        Address: "/var/run/docker.sock",
+        Risk:    plugin.RiskPrivileged,
+    },
+    Install: []plugin.InstallArtifact{{Label: "Docker", Kind: "docker-run", Template: "docker run ..."}},
+}
+```
+
 When a connection uses `TransportAgent` and no tunnel is online, the ShellCN
 workspace shows the enrollment UI from the plugin's `AgentProfile.Install`
 artifacts. The panel creates an enrollment token, renders install commands or

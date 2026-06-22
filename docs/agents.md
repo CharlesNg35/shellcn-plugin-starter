@@ -18,7 +18,7 @@ The gateway owns the tunnel, enrollment, and the agent binary - there is **one**
 shared agent (`shellcn-agent`), not a per-plugin one. Your plugin only:
 
 1. declares `TransportAgent` and an `AgentProfile`, and
-2. dials through `cfg.Net` as usual - **the same code as direct**.
+2. dials through `cfg.Net` as usual.
 
 Whether `cfg.Net` routes directly or through the agent is invisible to your
 handler. That's the point: you write the dial once.
@@ -57,6 +57,29 @@ Manifest{
     },
 }
 ```
+
+For host-sensitive protocols, declare **agent only**:
+
+```go
+Manifest{
+    SupportedTransports: []plugin.Transport{plugin.TransportAgent},
+    Agent: &plugin.AgentProfile{
+        Proxy: plugin.ProxyTarget{
+            Mode:    plugin.AgentUnix,
+            Address: "/var/run/docker.sock",
+            Risk:    plugin.RiskPrivileged,
+        },
+        Install: []plugin.InstallArtifact{
+            {Label: "Docker", Kind: "docker-run", Template: dockerRunTemplate},
+        },
+    },
+}
+```
+
+Use this for plugins that would otherwise let a shared gateway user reach the
+gateway host itself, such as Docker, Podman, Swarm, host-monitoring, or other
+local daemon/socket integrations. Do not expose a direct socket path, host
+monitor, or local privileged endpoint in the connection form for these plugins.
 
 When the user picks the **agent** transport in the connection form, the gateway
 renders an enrollment panel from `Install` (no UI code from you), mints a
@@ -118,19 +141,19 @@ should supply the actual dial addresses.
 
 ### Branch on the transport when you must
 
-For most plugins the dial is identical and you branch on nothing. Host-monitor is
-the exception - direct collects locally, agent talks to the agent's HTTP API:
+For most plugins the dial is identical and you branch on nothing. If a plugin is
+agent-only, reject any stale direct connection record defensively:
 
 ```go
 func Connect(ctx context.Context, cfg plugin.ConnectConfig) (plugin.Session, error) {
-    if cfg.Transport == plugin.TransportAgent {
-        base, rt, ok := cfg.Net.HTTP()
-        if !ok {
-            return nil, fmt.Errorf("%w: agent exposes no HTTP transport", plugin.ErrUnavailable)
-        }
-        return newRemote(base, &http.Client{Transport: rt}), nil
+    if cfg.Transport != plugin.TransportAgent {
+        return nil, fmt.Errorf("%w: this plugin requires agent transport", plugin.ErrInvalidInput)
     }
-    return newLocal(cfg), nil
+    base, rt, ok := cfg.Net.HTTP()
+    if !ok {
+        return nil, fmt.Errorf("%w: agent exposes no HTTP transport", plugin.ErrUnavailable)
+    }
+    return newRemote(base, &http.Client{Transport: rt}), nil
 }
 ```
 
@@ -195,7 +218,7 @@ From then on, `Connect` and every dial go through that tunnel via `cfg.Net`.
 ## Dialing - unchanged
 
 ```go
-// Works for direct AND agent connections; cfg.Net is wired by the gateway.
+// Works for direct and agent connections when your manifest allows both.
 conn, err := cfg.Net.DialContext(ctx, "tcp", cfg.String("host")+":"+port)
 ```
 
