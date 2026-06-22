@@ -328,8 +328,9 @@ The action route returns the command field, for example
 known yet, it targets the first pane.
 
 An `open_panel` effect opens a panel after the action succeeds. The panel's
-`Source` params may interpolate the action's JSON result via `${response.x}`, so a
-route can create a resource and then open a panel into it:
+`Source` params **and its `Title`** may interpolate the action's JSON result via
+`${response.x}` (and the active `${resource.x}`), so a route can create a resource
+and then open a panel titled with it:
 
 ```go
 OnSuccess: &plugin.ActionSuccess{
@@ -338,12 +339,16 @@ OnSuccess: &plugin.ActionSuccess{
         OpenPanel: &plugin.OpenPanelEffect{
             Open:   plugin.OpenDialog,
             Panel:  plugin.PanelObjectDetail,
-            Title:  "New backup",
+            Title:  "Backup · ${response.name}",
             Source: &plugin.DataSource{RouteID: "myplugin.backup.read", Params: map[string]string{"id": "${response.id}"}},
         },
     }},
 }
 ```
+
+A plain `Title` (no `${...}`) is used verbatim, and an unresolvable token falls
+back to the raw title rather than failing the open — so add tokens only for keys
+the action response actually returns.
 
 ## Editable grids (the database "data" tab)
 
