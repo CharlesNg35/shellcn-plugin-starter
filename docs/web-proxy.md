@@ -33,32 +33,28 @@ gateway returns `ErrNotSupported`.
 
 ## Implementing it
 
-Reverse-proxy the request to the target's web service **through `cfg.Net`** (so
-egress stays on the gateway transport), and rewrite the response so the app's
-absolute URLs resolve back under the proxy prefix:
+Use the SDK helper for real web apps:
+
+```go
+import "github.com/charlesng35/shellcn/sdk/plugin/webproxy"
+```
+
+Reverse-proxy the request to the target's web service **through `cfg.Net`** so
+egress stays on the gateway transport:
 
 ```go
 func (s *Session) ServeHTTPProxy(w http.ResponseWriter, r *http.Request) {
-    host, upstreamPath, ok := s.resolveTarget(r.URL.Path) // your routing
+    base, upstreamPath, ok := s.resolveTarget(r.URL.Path) // your routing
     if !ok {
         http.Error(w, "unsupported proxy target", http.StatusBadRequest)
         return
     }
-    // The public mount, supplied by the gateway (and stripped from the request
-    // so it is never forwarded upstream).
-    prefix := plugin.RequestProxyPrefix(r)
-    proxy := &httputil.ReverseProxy{
-        Director: func(req *http.Request) {
-            req.URL.Scheme = "http"
-            req.URL.Host = host
-            req.URL.Path = upstreamPath
-            req.Host = host
-        },
-        Transport:      s.transport, // an http.Transport whose DialContext is cfg.Net.DialContext
-        FlushInterval:  -1,           // stream responses, don't buffer
-        ModifyResponse: rewriteUnderPrefix(prefix),
-    }
-    proxy.ServeHTTP(w, r)
+    webproxy.Serve(w, r, webproxy.Options{
+        Base:         base, // scheme://host
+        Transport:    s.transport,
+        UpstreamPath: upstreamPath,
+        PublicPrefix: plugin.RequestProxyPrefix(r),
+    })
 }
 ```
 
@@ -97,8 +93,7 @@ plugin.Panel{
     Label: "Web",
     Type:  plugin.PanelWebProxy,
     Config: plugin.WebProxyConfig{
-        Path:         "/",
-        OpenExternal: true,
+        Path: "/",
         Capabilities: []plugin.WebProxyCapability{
             plugin.WebProxyCapabilityClipboard,
             plugin.WebProxyCapabilityFullscreen,
@@ -119,6 +114,9 @@ extra browser privileges through named capabilities:
 - `SameOrigin` removes opaque-origin isolation. Use it only for trusted,
   connection-owned surfaces that cannot work without browser origin storage.
 
+Set `OpenExternal: true` only when the embedded app needs a larger separate tab.
+Inline rendering should be the default.
+
 ## Rewriting is the hard part
 
 Proxying a static page is trivial; proxying a real single-page app is not. The
@@ -134,10 +132,9 @@ proxy must rewrite, in the response:
 - and inject a small runtime shim plus a service worker so the app's _dynamic_
   `fetch`/`WebSocket`/navigation requests stay under the prefix too.
 
-For a simple internal tool, `httputil.ReverseProxy` with the
-`Director`/`ModifyResponse` above is enough. For a full SPA, implement the
-rewrites you need in your plugin and test the target UI through the gateway
-prefix; do not depend on gateway-internal proxy helpers.
+Use `sdk/plugin/webproxy` for the common rewrite path. If a target app has
+unusual runtime behavior, add the smallest plugin-local handling around that
+helper and test the target UI through the gateway prefix.
 
 ## Notes
 

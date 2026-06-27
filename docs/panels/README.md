@@ -58,7 +58,7 @@ objects that cannot produce them.
 | Side-by-side generic composition | [Split](split.md) |
 | Custom server-driven drawing | [Canvas](canvas.md) |
 | Sandboxed browser-side WASM app | [WASM](wasm.md) |
-| Embedded connection-scoped web surface | [Web proxy](../web-proxy.md#embed-as-a-panel) |
+| Embedded connection-scoped web surface | [Web proxy](web-proxy.md) |
 | Agent enrollment | [Enroll](enroll.md) |
 
 Use `PanelCanvas` and `PanelWasm` only when a standard panel cannot represent
