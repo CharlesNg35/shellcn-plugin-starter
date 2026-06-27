@@ -49,6 +49,8 @@ Guard shared session state - a session can serve concurrent requests.
 ```go
 type ConnectConfig struct {
     ConnectionID string
+    UserID       string
+    ActorScope   string
     Transport    Transport           // "direct" or "agent"
     Config       map[string]any      // decrypted form values
     Credentials  ResolvedCredentials // resolved reusable credentials by config field
@@ -59,6 +61,13 @@ type ConnectConfig struct {
 
 Read config values with the typed helpers: `cfg.String("host")`,
 `cfg.Int("port")`. Secret fields are already decrypted.
+
+Use `ConnectionID` plus `ActorScope` when a plugin has to create local
+connection-owned resources such as cache directories, checked-out repositories,
+or helper-process state. `ActorScope` is the same boundary ShellCN uses for live
+session reuse; today it is usually the acting user, but plugins should treat it
+as an opaque scope string. `UserID` is explicit acting-user metadata and should
+not be used for authorization decisions.
 
 Read reusable credentials from `cfg.Credentials` with `cfg.CredentialFor(field)`
 or `cfg.RequiredCredentialFor(field, kind)`. Credential values are not merged
