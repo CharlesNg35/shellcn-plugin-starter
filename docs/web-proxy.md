@@ -136,6 +136,31 @@ Use `sdk/plugin/webproxy` for the common rewrite path. If a target app has
 unusual runtime behavior, add the smallest plugin-local handling around that
 helper and test the target UI through the gateway prefix.
 
+## Strict WebSocket origins
+
+Some browser apps validate WebSocket upgrades more strictly than normal HTTP
+requests. For example, an embedded editor may reject an upgrade when `Origin`
+points at the gateway instead of the upstream app, or when `Forwarded`/
+`X-Forwarded-*` headers are present. Keep that policy in the shared proxy helper,
+not in a custom `RoundTripper`:
+
+```go
+webproxy.Serve(w, r, webproxy.Options{
+    Base:         base,
+    Transport:    s.transport,
+    UpstreamPath: upstreamPath,
+    PublicPrefix: plugin.RequestProxyPrefix(r),
+    WebSocket: webproxy.WebSocketOptions{
+        RewriteOrigin:         true,
+        StripForwardedHeaders: true,
+    },
+})
+```
+
+Only enable these options for upstreams that need them. Most web apps benefit
+from the default forwarded context headers, and normal HTTP requests always keep
+that context.
+
 ## Notes
 
 - **Auth and audit still apply** - the gateway authenticates every proxied request

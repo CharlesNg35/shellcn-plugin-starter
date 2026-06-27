@@ -143,9 +143,11 @@ request that needs them.
 
 If your target serves a web UI (a dashboard, a container's exposed port, a DB
 admin page), your Session can surface it in the browser. Implement the optional
-`plugin.HTTPProxy` interface and reverse-proxy to the upstream through `cfg.Net`:
+`plugin.HTTPProxy` interface and proxy to the upstream through `cfg.Net`:
 
 ```go
+import "github.com/charlesng35/shellcn/sdk/plugin/webproxy"
+
 type HTTPProxy interface {
     ServeHTTPProxy(w http.ResponseWriter, r *http.Request)
 }
@@ -156,9 +158,12 @@ func (s *session) ServeHTTPProxy(w http.ResponseWriter, r *http.Request) {
         http.Error(w, "no upstream", http.StatusBadGateway)
         return
     }
-    rp := httputil.NewSingleHostReverseProxy(u)
-    rp.Transport = &http.Transport{DialContext: s.net.DialContext} // egress via the gateway
-    rp.ServeHTTP(w, r)
+    webproxy.Serve(w, r, webproxy.Options{
+        Base:         u,
+        Transport:    &http.Transport{DialContext: s.net.DialContext}, // egress via the gateway
+        UpstreamPath: r.URL.Path,
+        PublicPrefix: plugin.RequestProxyPrefix(r),
+    })
 }
 ```
 
@@ -167,5 +172,6 @@ under a per-connection mount, so redirects, assets, and WebSocket upgrades pass
 through. The mount is core-owned - never hardcode it. To give the user a link,
 return `rc.ProxyURL()` from a route and bind it to an `Action` with
 `Open: plugin.OpenURL`; inside `ServeHTTPProxy`, read the mount with
-`plugin.RequestProxyPrefix(r)` when rewriting paths. See
-[web-proxy.md](web-proxy.md) for the full story.
+`plugin.RequestProxyPrefix(r)` when rewriting paths. Use
+`webproxy.WebSocketOptions` for strict upstreams that reject gateway-origin
+WebSocket upgrades. See [web-proxy.md](web-proxy.md) for the full story.

@@ -61,8 +61,9 @@ That keeps outbound traffic inside the configured connection transport.
 
 `webproxy.Serve` handles the common redirect, cookie path, root-relative asset,
 CSS URL, framing header, WebSocket URL, and service-worker rewriting needed by
-single-page apps. See the top-level [web proxy guide](../web-proxy.md) for the
-full proxy model.
+single-page apps. It also has opt-in `WebSocketOptions` for upstreams that reject
+gateway-origin WebSocket upgrades or forwarded proxy headers. See the top-level
+[web proxy guide](../web-proxy.md) for the full proxy model.
 
 ## Capabilities
 
