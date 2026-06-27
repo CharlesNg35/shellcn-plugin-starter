@@ -86,6 +86,39 @@ func proxyURL(rc *plugin.RequestContext) (any, error) {
 segments and a trailing slash; `rc.ProxyPrefix()` returns the bare mount. Bind
 the route to an `Action` with `Open: plugin.OpenURL`.
 
+## Embed as a panel
+
+Use `PanelWebProxy` when the proxied surface should live inside the workspace
+instead of opening a separate browser tab:
+
+```go
+plugin.Panel{
+    Key:   "web",
+    Label: "Web",
+    Type:  plugin.PanelWebProxy,
+    Config: plugin.WebProxyConfig{
+        Path:         "/",
+        OpenExternal: true,
+        Capabilities: []plugin.WebProxyCapability{
+            plugin.WebProxyCapabilityClipboard,
+            plugin.WebProxyCapabilityFullscreen,
+        },
+    },
+}
+```
+
+`Path` is relative to the connection proxy mount and must start with `/`. Do not
+put an absolute URL in the manifest; the gateway builds the per-connection URL.
+The panel renders the proxied surface in a sandboxed iframe and only enables
+extra browser privileges through named capabilities:
+
+- `Clipboard` allows clipboard read/write.
+- `Downloads` allows browser downloads.
+- `Fullscreen` allows fullscreen requests.
+- `Popups` allows popup windows.
+- `SameOrigin` removes opaque-origin isolation. Use it only for trusted,
+  connection-owned surfaces that cannot work without browser origin storage.
+
 ## Rewriting is the hard part
 
 Proxying a static page is trivial; proxying a real single-page app is not. The
