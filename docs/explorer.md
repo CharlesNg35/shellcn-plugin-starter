@@ -250,7 +250,7 @@ A `ResourceType` groups its actions by **where they render**:
 ```go
 Actions: plugin.ResourceActions{
     Toolbar: []string{"myplugin.container.create", "myplugin.container.prune"}, // no row context
-    Row:     []string{"myplugin.container.remove"},                             // bulk over the selection
+    Row:     []string{"myplugin.container.rename", "myplugin.container.remove"}, // selected-row actions
     Detail:  []string{"myplugin.container.start", "myplugin.container.stop",    // the one open resource
                       "myplugin.container.restart", "myplugin.container.remove"},
 },
@@ -258,15 +258,18 @@ Actions: plugin.ResourceActions{
 
 - **`Toolbar`** - list-level actions with no row context (create, prune).
 - **`Row`** - act on the **selected rows** (checkboxes appear automatically;
-  declaring `Row` implies `Selectable`). Keep this bar **lean** - typically just
-  `delete`/`remove`. It's a bulk bar, not a menu.
+  declaring `Row` implies `Selectable`). Keep this bar **lean**. It may include
+  single-row actions such as rename/inspect and bulk actions such as
+  delete/remove.
 - **`Detail`** - the per-item lifecycle/edit actions (start, stop, rename,
-  delete) live in the open resource's detail header, **not** the row bar.
+  delete) live in the open resource's detail header when they need more context
+  than a selected table row.
 
-The rule: **bulk-destructive only in the row bar; everything single-item goes in
-the detail view.** It keeps the selection bar uncluttered and avoids two delete
-buttons. For a plain browse table (selection but no row bar), set
-`Selectable: true` on the `TableConfig`.
+Row actions are **single-target by default**. If the user selects two rows, the
+renderer hides row actions unless the action declares `Bulk: true`. This prevents
+bad UX such as offering "Rename column" for two selected columns, while still
+letting "Delete selected rows" run once for each selected row. For a plain browse
+table (selection but no row bar), set `Selectable: true` on the `TableConfig`.
 
 ## Guard and group actions
 
@@ -304,6 +307,33 @@ usable:
   by state.
 - **`Group`** collects related actions (Power, Snapshots) into one labeled
   dropdown instead of a wall of buttons.
+- **`Bulk`** opts a row action into multi-selection. Leave it false for actions
+  like rename/edit/rollback that need one selected row. Set it true for actions
+  that can safely run once per selected row.
+- **`Body`** carries structured mutation payloads. Use params for route identity
+  and body for values or row identity objects:
+
+```go
+plugin.Action{
+    ID: "myplugin.container.remove", Label: "Remove", Icon: icon("trash"),
+    RouteID: "myplugin.container.remove",
+    Params:  map[string]string{"id": "${resource.uid}"},
+    Confirm: true,
+    Bulk:    true,
+}
+
+plugin.Action{
+    ID: "myplugin.table.row.delete", Label: "Delete rows", Icon: icon("trash"),
+    RouteID: "myplugin.table.row.delete",
+    Params:  map[string]string{"table": "${resource.uid}"},
+    Body:    map[string]any{"key": "${record._key}"},
+    Confirm: true,
+    Bulk:    true,
+}
+```
+
+An exact single-token body value preserves its raw type. If `record._key` is an
+object, the request body is `{"key":{"id":7}}`, not a stringified JSON blob.
 - **`OnSuccess.SelectTab`** moves the user to the relevant tab after success (take
   a snapshot, land on the Snapshots tab).
 - **`OnSuccess.Effects`** runs typed generic UI effects after success. Use a

@@ -142,15 +142,36 @@ selection.
 ```go
 plugin.TableConfig{
     ActionIDs:    []string{"myplugin.refresh", "myplugin.create"},
-    RowActionIDs: []string{"myplugin.restart", "myplugin.delete"},
+    RowActionIDs: []string{"myplugin.rename", "myplugin.delete"},
     Selectable:   true,
 }
 ```
 
+Row actions are single-row by default. This prevents bad UX such as showing
+"Rename" when two columns are selected. Add `Bulk: true` to the action only when
+it can safely run once for each selected row.
+
+```go
+plugin.Action{
+    ID:      "myplugin.delete",
+    Label:   "Delete",
+    RouteID: "myplugin.delete",
+    Params:  map[string]string{"table": "${resource.uid}"},
+    Body:    map[string]any{"key": "${record._key}"},
+    Confirm: true,
+    Bulk:    true,
+}
+```
+
+Use `Params` for route identity and `Body` for structured mutation payloads.
+When the body value is exactly one template token, the renderer preserves the
+raw value type, so `${record._key}` can become `{ "id": 7 }` instead of a string.
+
 For resource type lists, prefer `ResourceActions.Toolbar`, `ResourceActions.Row`,
 and `ResourceActions.Detail` on the resource type. Keep row bars lean. Bulk
-delete/remove belongs in row actions; lifecycle actions often belong in the
-resource detail header.
+delete/remove belongs in row actions. Lifecycle actions often belong in the
+resource detail header unless they are intentionally repeatable across selected
+rows.
 
 ## Row click
 
@@ -198,6 +219,7 @@ plugin.TableConfig{
         Method:  plugin.MethodDelete,
         Params:  map[string]string{"table": "${resource.uid}"},
     },
+    RowActionIDs: []string{"myplugin.row.delete"},
 }
 ```
 

@@ -88,6 +88,49 @@ cookies, or auth - that's all gateway-side.
 - `rc.Audit(result, params, err)` - record an operation inside a long-lived
   route (see [streaming.md](streaming.md)).
 
+### Params vs body
+
+Renderer-supplied params and request bodies are intentionally separate:
+
+- `DataSource.Params` and `Action.Params` become route params. Read them with
+  `rc.Param("name")` or `rc.ParamList("name", plugin.ScopeSeparator)`.
+- `Action.Body`, form input, editor saves, and file-browser mutations become the
+  JSON or multipart body. Decode it with `rc.Bind(&dst)`.
+
+Use params for the stable route address: database, namespace, table, object id,
+path, and similar identity fields. Use body for structured mutation payloads:
+new values, options, and row identity objects.
+
+```go
+// Manifest action.
+plugin.Action{
+    ID: "myplugin.table.row.delete", Label: "Delete rows",
+    RouteID: "myplugin.table.row.delete",
+    Params:  map[string]string{"database": "${resource.scope}", "table": "${resource.name}"},
+    Body:    map[string]any{"key": "${record._key}"},
+    Confirm: true,
+    Bulk:    true,
+}
+
+// Handler.
+func deleteRow(rc *plugin.RequestContext) (any, error) {
+    var in struct {
+        Key map[string]any `json:"key" validate:"required"`
+    }
+    if err := rc.Bind(&in); err != nil {
+        return nil, err
+    }
+    database := rc.Param("database")
+    table := rc.Param("table")
+    // Revalidate database/table/key server-side, then delete.
+    return map[string]any{"database": database, "table": table, "deleted": true}, nil
+}
+```
+
+An exact single-token body value preserves its raw JSON type. For example,
+`Body: map[string]any{"key": "${record._key}"}` sends the row key object as an
+object. Embedded tokens such as `"row-${record.id}"` interpolate to strings.
+
 ## Returning lists
 
 Table/list panels expect a `plugin.Page[T]`:

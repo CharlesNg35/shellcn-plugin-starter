@@ -535,13 +535,26 @@ Actions: []plugin.Action{
         Params:      map[string]string{"key": "${record.key}"},
         Confirm:     true, ConfirmText: "Delete this entry?",
     },
+    {
+        ID: "myplugin.row.delete", Label: "Delete rows", Icon: icon("trash"),
+        RouteID: "myplugin.row.delete",
+        Params:  map[string]string{"table": "${resource.uid}"},
+        Body:    map[string]any{"key": "${record._key}"},
+        Confirm: true, ConfirmText: "Delete selected row(s)?",
+        Bulk:    true,
+    },
 },
 ```
 
 Useful `Action` fields:
 
 - `Params` - templated route params (e.g. `${resource.uid}` for resource actions
-  or `${record.key}` for plain row actions).
+  or `${record.key}` for plain row actions). Use params to identify the route
+  target: database, namespace, table, object id, and similar address fields.
+- `Body` - templated JSON request body. Use body for mutation payloads and
+  structured row identity. A value that is exactly one token, such as
+  `"${record._key}"`, keeps the raw value type; an embedded token such as
+  `"row-${record.id}"` interpolates to a string.
 - Route `Input` field defaults may also use `${resource.*}` and `${record.*}` for
   row/detail actions. The renderer resolves them before opening the form, so
   dialogs can be prefilled without plugin-specific frontend code.
@@ -556,6 +569,10 @@ Useful `Action` fields:
 - `VisibleWhen` - a `*Condition` over the active row's fields to hide actions that
   do not apply to the selected resource.
 - `Group` - cluster actions into a labeled dropdown. `IconOnly` - icon button + tooltip.
+- `Bulk` - opt a row action into multi-selection. Row actions are single-target
+  by default, so rename/edit/inspect actions disappear when multiple rows are
+  selected. Set `Bulk: true` only for actions that are safe to repeat for every
+  selected row, such as delete/remove.
 
 Reference actions from a panel's `ActionIDs`/`RowActionIDs`, a resource's
 `Actions` (toolbar/row/detail), or `Manifest.HeaderActions`.
